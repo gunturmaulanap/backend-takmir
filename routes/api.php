@@ -110,14 +110,7 @@ Route::prefix('superadmin')->group(function () {
 
 
         //categories - specific routes HARUS sebelum apiResource
-        Route::get('/categories/all', [App\Http\Controllers\Api\Superadmin\CategoryController::class, 'all']);
-        Route::apiResource('/categories', SuperadminCategoryController::class)->names([
-            'index' => 'superadmin.categories.index',
-            'store' => 'superadmin.categories.store',
-            'show' => 'superadmin.categories.show',
-            'update' => 'superadmin.categories.update',
-            'destroy' => 'superadmin.categories.destroy',
-        ]);
+
         //users
         Route::apiResource('/users', UserController::class);
         Route::put('/users/{id}/toggle-active', [UserController::class, 'toggleActive'])
