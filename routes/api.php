@@ -42,7 +42,7 @@ Route::group(['middleware' => 'auth:api'], function () {
     Route::post('/logout', [LoginController::class, 'logout']);
 
     // Grup rute untuk Admin (Hanya admin dan takmir)
-    Route::prefix('admin')->middleware('custom.role:admin,takmir')->group(function () {
+    Route::prefix('admin')->as('admin.')->middleware('custom.role:admin,takmir')->group(function () {
 
         // Categories API - specific routes HARUS sebelum apiResource
         Route::get('/categories/all', [AdminCategoryController::class, 'all']);
@@ -95,7 +95,7 @@ Route::group(['middleware' => 'auth:api'], function () {
 });
 
 //group route with prefix "superadmin" (Hanya superadmin)
-Route::prefix('superadmin')->group(function () {
+Route::prefix('superadmin')->as('superadmin.')->group(function () {
     //group route with middleware "auth:api" dan role superadmin
     Route::group(['middleware' => ['auth:api', 'custom.role:superadmin']], function () {
         //dashboard
