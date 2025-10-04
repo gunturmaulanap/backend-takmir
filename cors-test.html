@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>CORS Test</title>
+    </head>
+    <body>
+        <h1>CORS Test for Takmir API</h1>
+        <div id="results"></div>
+
+        <script>
+            async function testCORS() {
+                const results = document.getElementById("results");
+                const apiUrl = "http://127.0.0.1:8000/api";
+
+                try {
+                    // Test OPTIONS preflight request
+                    console.log("Testing OPTIONS request...");
+                    const optionsResponse = await fetch(`${apiUrl}/login`, {
+                        method: "OPTIONS",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "Access-Control-Request-Method": "POST",
+                            "Access-Control-Request-Headers":
+                                "Content-Type, Authorization",
+                        },
+                    });
+
+                    console.log("OPTIONS Response:", optionsResponse);
+                    console.log("OPTIONS Headers:", [
+                        ...optionsResponse.headers.entries(),
+                    ]);
+
+                    // Test actual POST request
+                    console.log("Testing POST request...");
+                    const postResponse = await fetch(`${apiUrl}/login`, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            Accept: "application/json",
+                        },
+                        body: JSON.stringify({
+                            email: "test@example.com",
+                            password: "password",
+                        }),
+                    });
+
+                    console.log("POST Response:", postResponse);
+                    console.log("POST Headers:", [
+                        ...postResponse.headers.entries(),
+                    ]);
+
+                    const data = await postResponse.json();
+                    console.log("Response Data:", data);
+
+                    results.innerHTML = `
+                    <h3>CORS Test Results:</h3>
+                    <p><strong>OPTIONS Status:</strong> ${
+                        optionsResponse.status
+                    }</p>
+                    <p><strong>POST Status:</strong> ${postResponse.status}</p>
+                    <p><strong>CORS Headers Present:</strong> ${
+                        postResponse.headers.get("Access-Control-Allow-Origin")
+                            ? "Yes"
+                            : "No"
+                    }</p>
+                    <p><strong>Access-Control-Allow-Origin:</strong> ${
+                        postResponse.headers.get(
+                            "Access-Control-Allow-Origin"
+                        ) || "Not set"
+                    }</p>
+                    <p><strong>Access-Control-Allow-Methods:</strong> ${
+                        postResponse.headers.get(
+                            "Access-Control-Allow-Methods"
+                        ) || "Not set"
+                    }</p>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+                } catch (error) {
+                    console.error("Error:", error);
+                    results.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+                }
+            }
+
+            // Run test when page loads
+            window.addEventListener("load", testCORS);
+        </script>
+    </body>
+</html>

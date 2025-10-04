@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Frontend Example - Port 3000</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                padding: 20px;
+            }
+            .container {
+                max-width: 600px;
+                margin: 0 auto;
+            }
+            .result {
+                margin: 20px 0;
+                padding: 15px;
+                border-radius: 5px;
+            }
+            .success {
+                background-color: #d4edda;
+                border: 1px solid #c3e6cb;
+                color: #155724;
+            }
+            .error {
+                background-color: #f8d7da;
+                border: 1px solid #f5c6cb;
+                color: #721c24;
+            }
+            button {
+                padding: 10px 20px;
+                margin: 10px 5px;
+                border: none;
+                border-radius: 5px;
+                cursor: pointer;
+            }
+            .btn-primary {
+                background-color: #007bff;
+                color: white;
+            }
+            .btn-success {
+                background-color: #28a745;
+                color: white;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>🌐 Frontend Application (Port 3000)</h1>
+            <p>
+                <strong
+                    >Ini adalah contoh frontend yang berjalan di port
+                    3000</strong
+                >
+            </p>
+
+            <h2>Test CORS dengan Laravel API (Port 8000)</h2>
+
+            <button class="btn-primary" onclick="testAPI()">
+                Test API Login
+            </button>
+            <button class="btn-success" onclick="testAPIGet()">
+                Test API GET
+            </button>
+
+            <div id="result"></div>
+
+            <h3>📝 Penjelasan:</h3>
+            <ul>
+                <li>
+                    <strong>Port 3000:</strong> Frontend (HTML, CSS, JavaScript)
+                    - Yang user lihat
+                </li>
+                <li>
+                    <strong>Port 8000:</strong> Backend API (Laravel) - Data dan
+                    logic
+                </li>
+                <li>
+                    <strong>CORS:</strong> Memungkinkan port 3000 mengakses port
+                    8000
+                </li>
+            </ul>
+
+            <h3>🔄 Flow Aplikasi:</h3>
+            <ol>
+                <li>
+                    User buka browser → <code>localhost:3000</code> (Frontend)
+                </li>
+                <li>
+                    User klik login → Frontend kirim request ke
+                    <code>localhost:8000/api/login</code>
+                </li>
+                <li>CORS check: Apakah port 3000 boleh akses port 8000?</li>
+                <li>Jika boleh → API response data</li>
+                <li>Frontend tampilkan hasil ke user</li>
+            </ol>
+        </div>
+
+        <script>
+            async function testAPI() {
+                const resultDiv = document.getElementById("result");
+                resultDiv.innerHTML = "<p>Testing API...</p>";
+
+                try {
+                    const response = await fetch(
+                        "http://localhost:8000/api/login",
+                        {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json",
+                                Accept: "application/json",
+                            },
+                            body: JSON.stringify({
+                                email: "test@example.com",
+                                password: "password123",
+                            }),
+                        }
+                    );
+
+                    const data = await response.json();
+
+                    resultDiv.innerHTML = `
+                    <div class="result ${response.ok ? "success" : "error"}">
+                        <h4>✅ CORS Working! Frontend (port 3000) berhasil akses API (port 8000)</h4>
+                        <p><strong>Status:</strong> ${response.status}</p>
+                        <p><strong>Response:</strong></p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    </div>
+                `;
+                } catch (error) {
+                    resultDiv.innerHTML = `
+                    <div class="result error">
+                        <h4>❌ CORS Error!</h4>
+                        <p>Frontend (port 3000) tidak bisa akses API (port 8000)</p>
+                        <p><strong>Error:</strong> ${error.message}</p>
+                    </div>
+                `;
+                }
+            }
+
+            async function testAPIGet() {
+                const resultDiv = document.getElementById("result");
+                resultDiv.innerHTML = "<p>Testing API GET...</p>";
+
+                try {
+                    const response = await fetch("http://localhost:8000/api");
+                    const data = await response.json();
+
+                    resultDiv.innerHTML = `
+                    <div class="result success">
+                        <h4>✅ GET Request Success!</h4>
+                        <p><strong>Status:</strong> ${response.status}</p>
+                        <p><strong>Response:</strong></p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    </div>
+                `;
+                } catch (error) {
+                    resultDiv.innerHTML = `
+                    <div class="result error">
+                        <h4>❌ Error!</h4>
+                        <p><strong>Error:</strong> ${error.message}</p>
+                    </div>
+                `;
+                }
+            }
+        </script>
+    </body>
+</html>
