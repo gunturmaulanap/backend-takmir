@@ -25,7 +25,6 @@ class DashboardController extends Controller
         $categories = Category::count();
         $takmirs = Takmir::count();
         $events = Event::count();
-        $aparaturs = Aparatur::count();
         $jamaahs = Jamaah::count();
         $imams = Imam::count();
         $muadzins = Muadzin::count();
@@ -33,7 +32,6 @@ class DashboardController extends Controller
         $asatidzs = Asatidz::count();
         $users = User::count();
         $profile_masjids = ProfileMasjid::count();
-        $aktivitas_jamaahs = AktivitasJamaah::count();
         $event_views = EventView::count();
 
         return response()->json([
@@ -43,14 +41,12 @@ class DashboardController extends Controller
                 'categories'        => $categories,
                 'takmirs'           => $takmirs,
                 'events'            => $events,
-                'aparaturs'         => $aparaturs,
                 'jamaahs'           => $jamaahs,
                 'imams'             => $imams,
                 'muadzins'          => $muadzins,
                 'khatibs'           => $khatibs,
                 'asatidzs'          => $asatidzs,
                 'users'             => $users,
-                'aktivitas_jamaahs' => $aktivitas_jamaahs,
                 'profile_masjids'   => $profile_masjids,
                 'event_views'        => $event_views
             ]

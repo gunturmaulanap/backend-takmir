@@ -58,7 +58,7 @@ class SignUpController extends Controller
             if ($request->hasFile('image')) {
                 $image = $request->file('image');
                 $imageName = time() . '.' . $image->getClientOriginalExtension();
-                $image->storeAs('public/photos', $imageName);
+                $image->storeAs('photos', $imageName, 'public');
             }
 
             // Create the user with the provided data

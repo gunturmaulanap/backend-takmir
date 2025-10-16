@@ -17,13 +17,17 @@ class Takmir extends Model
 
     protected $fillable = [
         'user_id',
-        'profile_masjid_id', // Pastikan ini ada
+        'profile_masjid_id',
         'nama',
+        'slug',
+        'is_active',
         'no_handphone',
         'umur',
         'jabatan',
         'deskripsi_tugas',
         'image',
+        'created_by',
+        'updated_by',
     ];
 
     protected function image(): Attribute

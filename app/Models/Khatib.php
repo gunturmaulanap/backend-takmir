@@ -20,7 +20,8 @@ class Khatib extends Model
         'nama',
         'no_handphone',
         'alamat',
-
+        'created_by',
+        'updated_by',
     ];
 
     /**

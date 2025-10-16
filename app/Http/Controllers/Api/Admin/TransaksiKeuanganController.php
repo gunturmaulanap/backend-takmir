@@ -140,7 +140,7 @@ class TransaksiKeuanganController extends Controller implements HasMiddleware
         $buktiTransaksi = null;
         if ($request->hasFile('bukti_transaksi')) {
             $buktiTransaksi = time() . '.' . $request->file('bukti_transaksi')->getClientOriginalExtension();
-            $request->file('bukti_transaksi')->storeAs('public/bukti-transaksi', $buktiTransaksi);
+            $request->file('bukti_transaksi')->storeAs('bukti-transaksi', $buktiTransaksi, 'public');
         }
 
         $transaksi = TransaksiKeuangan::create([
@@ -173,11 +173,11 @@ class TransaksiKeuanganController extends Controller implements HasMiddleware
         if ($request->hasFile('bukti_transaksi')) {
             // Hapus file lama jika ada
             if ($transaksiKeuangan->bukti_transaksi) {
-                Storage::delete('public/bukti-transaksi/' . $transaksiKeuangan->bukti_transaksi);
+                Storage::disk('public')->delete('bukti-transaksi/' . $transaksiKeuangan->bukti_transaksi);
             }
 
             $buktiTransaksi = time() . '.' . $request->file('bukti_transaksi')->getClientOriginalExtension();
-            $request->file('bukti_transaksi')->storeAs('public/bukti-transaksi', $buktiTransaksi);
+            $request->file('bukti_transaksi')->storeAs('bukti-transaksi', $buktiTransaksi, 'public');
         }
 
         $transaksiKeuangan->update([
@@ -195,7 +195,7 @@ class TransaksiKeuanganController extends Controller implements HasMiddleware
     {
         // Hapus file bukti transaksi jika ada
         if ($transaksiKeuangan->bukti_transaksi) {
-            Storage::delete('public/bukti-transaksi/' . $transaksiKeuangan->bukti_transaksi);
+            Storage::disk('public')->delete('bukti-transaksi/' . $transaksiKeuangan->bukti_transaksi);
         }
 
         $transaksiKeuangan->delete();

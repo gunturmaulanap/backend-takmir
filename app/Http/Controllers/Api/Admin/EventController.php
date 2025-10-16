@@ -32,7 +32,24 @@ class EventController extends Controller implements HasMiddleware
      */
     public function index()
     {
-        $events = Event::with('category')->latest()->paginate(10);
+        $query = Event::with('category');
+
+        // Filter berdasarkan category_id jika ada
+        if (request()->has('category_id') && request('category_id')) {
+            $query->where('category_id', request('category_id'));
+        }
+
+        // Filter berdasarkan nama jika ada
+        if (request()->has('nama') && request('nama')) {
+            $query->where('nama', 'like', '%' . request('nama') . '%');
+        }
+
+        // Filter berdasarkan tanggal jika ada
+        if (request()->has('tanggal_event') && request('tanggal_event')) {
+            $query->whereDate('tanggal_event', request('tanggal_event'));
+        }
+
+        $events = $query->latest()->paginate(10);
         return new EventResource(true, 'List Data Events', $events);
     }
 
@@ -51,12 +68,12 @@ class EventController extends Controller implements HasMiddleware
         if ($request->hasFile('image')) {
             $image = $request->file('image');
             $imageName = time() . '.' . $image->getClientOriginalExtension();
-            $image->storeAs('public/photos', $imageName);
+            $image->storeAs('photos', $imageName, 'public');
         }
 
         $event = Event::create(array_merge($validated, [
             'profile_masjid_id' => $masjidProfile->id,
-            'user_id'           => $user->id,
+            'created_by'        => $user->id,
             'slug'              => Str::slug($validated['nama']),
             'image'             => $imageName,
         ]));
@@ -83,16 +100,17 @@ class EventController extends Controller implements HasMiddleware
 
         if ($request->hasFile('image')) {
             if ($event->image) {
-                Storage::delete('public/photos/' . $event->image);
+                Storage::disk('public')->delete('photos/' . $event->image);
             }
             $image = $request->file('image');
             $imageName = time() . '.' . $image->getClientOriginalExtension();
-            $image->storeAs('public/photos', $imageName);
+            $image->storeAs('photos', $imageName, 'public');
         }
 
         $event->update(array_merge($validated, [
-            'slug'  => Str::slug($validated['nama']),
-            'image' => $imageName,
+            'slug'       => Str::slug($validated['nama']),
+            'image'      => $imageName,
+            'updated_by' => $request->user()->id,
         ]));
 
         return new EventResource(true, 'Data event berhasil diperbarui.', $event);
@@ -104,7 +122,7 @@ class EventController extends Controller implements HasMiddleware
     public function destroy(Event $event)
     {
         if ($event->image) {
-            Storage::delete('public/photos/' . $event->image);
+            Storage::disk('public')->delete('photos/' . $event->image);
         }
         $event->delete();
         return new EventResource(true, 'Data event berhasil dihapus.', null);

@@ -28,7 +28,7 @@ class Asatidz extends Model
     protected function image(): Attribute
     {
         return Attribute::make(
-            get: fn($image) => url('/storage/photos/' . $image),
+            get: fn($image) => $image ? url('/storage/photos/' . $image) : null,
         );
     }
 

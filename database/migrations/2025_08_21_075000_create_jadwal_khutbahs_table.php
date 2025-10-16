@@ -21,7 +21,7 @@ return new class extends Migration
             $table->foreignId('profile_masjid_id')->constrained('profile_masjids')->cascadeOnDelete();
             $table->boolean('is_active')->default(true);
 
-            $table->text('catatan')->nullable();
+            $table->text('tema_khutbah')->nullable();
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();

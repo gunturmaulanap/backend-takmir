@@ -21,8 +21,9 @@ class UpdateEventRequest extends FormRequest
      */
     public function rules(): array
     {
-        // Dapatkan ID event dari route
-        $eventId = $this->route('event');
+        // Dapatkan ID event dari route (karena Route Model Binding, ini bisa berupa object)
+        $event = $this->route('event');
+        $eventId = is_object($event) ? $event->id : $event;
 
         return [
             'nama' => 'required|string|max:255|unique:events,nama,' . $eventId,
@@ -30,7 +31,7 @@ class UpdateEventRequest extends FormRequest
             'image'           => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'tanggal_event'   => 'required|date',
             'waktu_event'     => 'required|date_format:H:i',
-            'lokasi'          => 'required|string|max:255',
+            'tempat_event'    => 'required|string|max:255',
             'category_id'     => 'required|exists:categories,id',
         ];
     }

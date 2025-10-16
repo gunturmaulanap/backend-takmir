@@ -28,7 +28,7 @@ class StoreEventRequest extends FormRequest
             'image'           => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
             'tanggal_event'   => 'required|date',
             'waktu_event'     => 'required|date_format:H:i',
-            'lokasi'          => 'required|string|max:255',
+            'tempat_event'    => 'required|string|max:255',
             'category_id'     => 'required|exists:categories,id',
         ];
     }

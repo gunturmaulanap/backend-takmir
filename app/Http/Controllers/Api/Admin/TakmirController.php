@@ -68,7 +68,7 @@ class TakmirController extends Controller implements HasMiddleware
 
             // 3. Upload gambar
             $imageName = time() . '.' . $request->file('image')->getClientOriginalExtension();
-            $request->file('image')->storeAs('public/photos', $imageName);
+            $request->file('image')->storeAs('photos', $imageName, 'public');
 
             // 4. Buat data Takmir dengan audit columns
             return Takmir::create([
@@ -104,10 +104,10 @@ class TakmirController extends Controller implements HasMiddleware
         $imageName = $takmir->image;
 
         if ($request->hasFile('image')) {
-            if ($takmir->image) Storage::delete('public/photos/' . $takmir->image);
+            if ($takmir->image) Storage::disk('public')->delete('photos/' . $takmir->image);
 
             $imageName = time() . '.' . $request->file('image')->getClientOriginalExtension();
-            $request->file('image')->storeAs('public/photos', $imageName);
+            $request->file('image')->storeAs('photos', $imageName, 'public');
         }
 
         DB::transaction(function () use ($takmir, $validated, $imageName, $user) {
@@ -130,7 +130,7 @@ class TakmirController extends Controller implements HasMiddleware
     {
         DB::transaction(function () use ($takmir) {
             if ($takmir->image) {
-                Storage::delete('public/photos/' . $takmir->image);
+                Storage::disk('public')->delete('photos/' . $takmir->image);
             }
 
             // Hapus user terkait terlebih dahulu
