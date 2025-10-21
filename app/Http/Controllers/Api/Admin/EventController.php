@@ -96,22 +96,33 @@ class EventController extends Controller implements HasMiddleware
     public function update(UpdateEventRequest $request, Event $event)
     {
         $validated = $request->validated();
-        $imageName = $event->image;
 
+        // Prepare data untuk update
+        $updateData = [
+            'slug'       => Str::slug($validated['nama']),
+            'updated_by' => $request->user()->id,
+        ];
+
+        // ✅ HANYA update image jika ada file upload baru
         if ($request->hasFile('image')) {
+            // Hapus image lama
             if ($event->image) {
-                Storage::disk('public')->delete('photos/' . $event->image);
+                $oldImageName = basename($event->image); // Extract filename dari URL
+                Storage::disk('public')->delete('photos/' . $oldImageName);
             }
+
+            // Upload image baru
             $image = $request->file('image');
             $imageName = time() . '.' . $image->getClientOriginalExtension();
             $image->storeAs('photos', $imageName, 'public');
-        }
 
-        $event->update(array_merge($validated, [
-            'slug'       => Str::slug($validated['nama']),
-            'image'      => $imageName,
-            'updated_by' => $request->user()->id,
-        ]));
+            // Simpan filename saja, bukan full URL
+            $updateData['image'] = $imageName;
+        }
+        // ❌ Jika tidak ada file upload, JANGAN tambahkan 'image' ke $updateData
+
+        // Merge dengan validated data
+        $event->update(array_merge($validated, $updateData));
 
         return new EventResource(true, 'Data event berhasil diperbarui.', $event);
     }
