@@ -23,7 +23,7 @@ class StoreEventRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'nama' => 'required|string|max:255|unique:events,nama',
+            'nama' => 'required|string|max:255|unique:events,nama,NULL,id,profile_masjid_id,' . $this->user()->getMasjidProfile()->id,
             'deskripsi'       => 'required|string',
             'image'           => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
             'tanggal_event'   => 'required|date',

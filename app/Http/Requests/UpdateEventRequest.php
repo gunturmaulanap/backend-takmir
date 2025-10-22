@@ -26,7 +26,8 @@ class UpdateEventRequest extends FormRequest
         $eventId = is_object($event) ? $event->id : $event;
 
         return [
-            'nama' => 'required|string|max:255|unique:events,nama,' . $eventId,
+            'nama' => 'required|string|max:255|unique:events,nama,' . $eventId . ',id,profile_masjid_id,' . $this->user()->getMasjidProfile()->id,
+
             'deskripsi'       => 'required|string',
             'image'           => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'tanggal_event'   => 'required|date',
