@@ -23,6 +23,9 @@ class RolesTableSeeder extends Seeder
             'guard_name' => 'api'
         ]);
 
+        // Meentapkan permissions untuk role 'superadmin'
+        $superadminRole->givePermissionTo(Permission::all());
+
         // Membuat role 'admin'
         $adminRole = Role::create([
             'name' => 'admin',
