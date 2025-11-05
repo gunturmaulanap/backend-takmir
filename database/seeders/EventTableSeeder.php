@@ -6,7 +6,6 @@ use Illuminate\Database\Seeder;
 use App\Models\Event;
 use App\Models\ProfileMasjid;
 use App\Models\Category;
-use App\Models\User;
 use Illuminate\Support\Str;
 
 class EventTableSeeder extends Seeder
@@ -45,36 +44,73 @@ class EventTableSeeder extends Seeder
         foreach ($masjids as $masjid) {
             $userId = $masjid->user_id;
 
-            // Generate 4 event untuk setiap masjid
-            for ($i = 1; $i <= 4; $i++) {
-                // Ambil kategori random untuk setiap event
-                $category = Category::where('profile_masjid_id', $masjid->id)->inRandomOrder()->first();
+            // Ambil 3 kategori berbeda untuk setiap masjid
+            $categories = Category::where('profile_masjid_id', $masjid->id)->inRandomOrder()->take(3)->get();
 
-                if (!$category) {
-                    // Jika tidak ada kategori, skip masjid ini
-                    continue;
-                }
+            if ($categories->count() < 1) {
+                // Jika tidak ada kategori, skip masjid ini
+                continue;
+            }
 
+            // Jika kurang dari 3 kategori, gunakan yang tersedia
+            $categoryCount = $categories->count();
+            $eventCategoryDistribution = [];
+
+            if ($categoryCount >= 3) {
+                // Distribusi 4 event ke 3 kategori: 2, 1, 1
+                $eventCategoryDistribution = [
+                    $categories[0]->id => 2, // 2 event dari kategori pertama
+                    $categories[1]->id => 1, // 1 event dari kategori kedua
+                    $categories[2]->id => 1, // 1 event dari kategori ketiga
+                ];
+            } elseif ($categoryCount == 2) {
+                // Distribusi 4 event ke 2 kategori: 2, 2
+                $eventCategoryDistribution = [
+                    $categories[0]->id => 2, // 2 event dari kategori pertama
+                    $categories[1]->id => 2, // 2 event dari kategori kedua
+                ];
+            } else {
+                // Jika hanya 1 kategori, semua event dari kategori tersebut
+                $eventCategoryDistribution = [
+                    $categories[0]->id => 4, // 4 event dari satu-satunya kategori
+                ];
+            }
+
+            $usedEventNames = []; // Untuk tracking nama event yang sudah dipakai
+
+            // Generate event sesuai distribusi kategori
+            foreach ($eventCategoryDistribution as $categoryId => $eventCount) {
+                $category = $categories->where('id', $categoryId)->first();
                 $categoryName = $category->nama;
                 $templateList = $eventTemplates[$categoryName] ?? ['Event Masjid'];
-                $eventName = $templateList[array_rand($templateList)];
 
-                // Tambahkan nomor event untuk memastikan nama unik
-                $uniqueEventName = $eventName . ' ' . $i;
+                for ($i = 1; $i <= $eventCount; $i++) {
+                    // Pilih nama event yang belum dipakai di masjid ini
+                    $availableEventNames = array_diff($templateList, $usedEventNames);
 
-                $event = Event::create([
-                    'category_id' => $category->id,
-                    'profile_masjid_id' => $masjid->id,
-                    'nama' => $uniqueEventName,
-                    'slug' => Str::slug($uniqueEventName),
-                    'tanggal_event' => now()->addDays(rand(1, 60)),
-                    'waktu_event' => now()->addHours(rand(1, 12))->format('H:i'),
-                    'tempat_event' => $this->generateRandomLocation($masjid->nama),
-                    'deskripsi' => 'Kegiatan: ' . $eventName . ' ke-' . $i . ' di Masjid ' . $masjid->nama,
-                    'image' => null,
-                    'created_by' => $userId,
-                    'updated_by' => $userId,
-                ]);
+                    // Jika semua nama sudah dipakai, reset array
+                    if (empty($availableEventNames)) {
+                        $usedEventNames = [];
+                        $availableEventNames = $templateList;
+                    }
+
+                    $eventName = $availableEventNames[array_rand($availableEventNames)];
+                    $usedEventNames[] = $eventName;
+
+                    Event::create([
+                        'category_id' => $categoryId,
+                        'profile_masjid_id' => $masjid->id,
+                        'nama' => $eventName,
+                        'slug' => Str::slug($eventName),
+                        'tanggal_event' => now()->addDays(rand(1, 60)),
+                        'waktu_event' => now()->addHours(rand(1, 12))->format('H:i'),
+                        'tempat_event' => $this->generateRandomLocation($masjid->nama),
+                        'deskripsi' => 'Kegiatan: ' . $eventName . ' di Masjid ' . $masjid->nama,
+                        'image' => null,
+                        'created_by' => $userId,
+                        'updated_by' => $userId,
+                    ]);
+                }
             }
         }
     }
