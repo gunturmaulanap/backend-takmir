@@ -29,7 +29,7 @@ class JadwalKhutbahTableSeeder extends Seeder
                     'khatib_id' => $khatibStart + $i,
                     'muadzin_id' => $muadzinStart + $i,
                     'profile_masjid_id' => $masjidId,
-                    'catatan' => 'Khutbah ke-' . ($i + 1) . ' di masjid ' . $masjidId,
+                    'tema_khutbah' => 'Khutbah ke-' . ($i + 1) . ' di masjid ' . $masjidId,
                     'created_by' => $userId,
                     'updated_by' => $userId,
                 ]);

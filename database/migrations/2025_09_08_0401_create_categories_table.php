@@ -13,11 +13,10 @@ return new class extends Migration
     {
         Schema::create('categories', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
+            $table->string('nama');
             $table->string('slug');
-            $table->unique(['slug', 'profile_masjid_id']);
             $table->foreignId('profile_masjid_id')->constrained('profile_masjids')->cascadeOnDelete();
-            $table->enum('color', ['Blue', 'Green', 'Purple', 'Orange', 'Indigo'])->nullable();
+            $table->enum('warna', ['Blue', 'Green', 'Purple', 'Orange', 'Indigo'])->nullable();
             $table->string('deskripsi')->nullable();
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();

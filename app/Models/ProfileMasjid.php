@@ -3,8 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Casts\Attribute;
-use Illuminate\Database\Eloquent\Relations\BelongsTo; // Tambahkan ini
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ProfileMasjid extends Model
 {
@@ -17,6 +16,8 @@ class ProfileMasjid extends Model
         'alamat',
         'image',
         'slug',
+        'created_by',
+        'updated_by',
     ];
 
     // Relasi yang benar, dari ProfileMasjid ke User

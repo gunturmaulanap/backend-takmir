@@ -17,9 +17,9 @@ class Category extends Model
      * @var array
      */
     protected $fillable = [
-        'name',
+        'nama',
         'slug',
-        'color',
+        'warna',
         'deskripsi',
         'profile_masjid_id',
         'created_by',

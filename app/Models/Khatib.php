@@ -20,6 +20,7 @@ class Khatib extends Model
         'nama',
         'no_handphone',
         'alamat',
+        'is_active',
         'created_by',
         'updated_by',
     ];
@@ -29,7 +30,7 @@ class Khatib extends Model
      * Ini penting agar tanggal bisa diolah dengan benar.
      */
     protected $casts = [
-        'tanggal_khutbah' => 'date', // <-- Ditambahkan
+        'is_active' => 'boolean',
     ];
 
 

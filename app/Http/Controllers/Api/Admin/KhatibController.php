@@ -10,6 +10,7 @@ use App\Http\Resources\KhatibResource;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Str;
+use Illuminate\Http\Request;
 
 class KhatibController extends Controller implements HasMiddleware
 {
@@ -18,7 +19,7 @@ class KhatibController extends Controller implements HasMiddleware
         return [
             new Middleware(['permission:khatibs.index'], only: ['index']),
             new Middleware(['permission:khatibs.create'], only: ['store']),
-            new Middleware(['permission:khatibs.edit'], only: ['update']),
+            new Middleware(['permission:khatibs.edit'], only: ['update', 'updateStatus']),
             new Middleware(['permission:khatibs.delete'], only: ['destroy']),
         ];
     }
@@ -59,7 +60,8 @@ class KhatibController extends Controller implements HasMiddleware
 
         $khatib = Khatib::create(array_merge($validated, [
             'profile_masjid_id' => $profileMasjidId,
-            'slug' => Str::slug($validated['nama'] . '-' . $validated['tanggal_khutbah']),
+            'slug' => Str::slug($validated['nama'] . '-' . time()),
+            'is_active' => $validated['is_active'] ?? true,
             'created_by' => $user->id,
             'updated_by' => $user->id,
         ]));
@@ -93,13 +95,39 @@ class KhatibController extends Controller implements HasMiddleware
         $updateData = $validated;
         // Buat slug baru jika nama diubah
         if (isset($validated['nama'])) {
-            $updateData['slug'] = Str::slug($validated['nama'] . '-' . $validated['tanggal_khutbah']);
+            $updateData['slug'] = Str::slug($validated['nama'] . '-' . time());
         }
         $updateData['updated_by'] = $user->id;
 
         $khatib->update($updateData);
 
         return new KhatibResource(true, 'Khatib berhasil diperbarui.', $khatib);
+    }
+
+    /**
+     * Memperbarui status aktif khatib.
+     */
+    public function updateStatus(Request $request, Khatib $khatib)
+    {
+        $request->validate([
+            'is_active' => 'required|boolean'
+        ]);
+
+        $user = $request->user();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'User tidak terautentikasi.'
+            ], 403);
+        }
+
+        $khatib->update([
+            'is_active' => $request->is_active,
+            'updated_by' => $user->id
+        ]);
+
+        return new KhatibResource(true, 'Status khatib berhasil diperbarui!', $khatib);
     }
 
     /**

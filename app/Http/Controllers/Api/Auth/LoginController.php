@@ -49,6 +49,16 @@ class LoginController extends Controller
                 ], 404);
             }
 
+            // Cek jika user role takmir, validasi status aktif
+            if ($user->roles->contains('name', 'takmir') && $user->takmir) {
+                if (!$user->takmir->is_active) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Akun takmir tidak aktif. Silakan hubungi admin.'
+                    ], 403);
+                }
+            }
+
             // Ambil role utama user (tanpa input dari request)
             $role = $user->roles->isNotEmpty() ? $user->roles->first()->name : 'user';
 

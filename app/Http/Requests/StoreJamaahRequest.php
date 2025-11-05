@@ -36,7 +36,7 @@ class StoreJamaahRequest extends FormRequest
             'no_handphone' => 'required|string|max:15',
             'alamat' => 'required|string',
             'umur' => 'required|integer|min:1|max:150',
-            'jenis_kelamin' => 'required|in:Laki-laki,Perempuan',
+            'jenis_kelamin' => 'required|string|in:Laki-laki,Perempuan',
             'aktivitas_jamaah' => 'nullable|string|max:255',
             'profile_masjid_id' => 'nullable|exists:profile_masjids,id', // Untuk superadmin
         ];

@@ -7,7 +7,6 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Casts\Attribute;
 use App\Models\Traits\HasMasjid;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -25,17 +24,10 @@ class Takmir extends Model
         'umur',
         'jabatan',
         'deskripsi_tugas',
-        'image',
         'created_by',
         'updated_by',
     ];
 
-    protected function image(): Attribute
-    {
-        return Attribute::make(
-            get: fn($image) => $image ? url('/storage/photos/' . $image) : null,
-        );
-    }
 
     public function user(): BelongsTo
     {
@@ -48,10 +40,7 @@ class Takmir extends Model
     {
         return $this->belongsTo(ProfileMasjid::class);
     }
-    public function createdBy(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'created_by');
-    }
+
     public function updatedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'updated_by');

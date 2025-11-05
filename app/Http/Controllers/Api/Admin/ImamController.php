@@ -19,7 +19,7 @@ class ImamController extends Controller implements HasMiddleware
         return [
             new Middleware(['permission:imams.index'], only: ['index']),
             new Middleware(['permission:imams.create'], only: ['store']),
-            new Middleware(['permission:imams.edit'], only: ['update']),
+            new Middleware(['permission:imams.edit'], only: ['update', 'updateStatus']),
             new Middleware(['permission:imams.delete'], only: ['destroy']),
         ];
     }
@@ -73,7 +73,8 @@ class ImamController extends Controller implements HasMiddleware
             'profile_masjid_id' => $profileMasjidId,
             'created_by' => $user->id,
             'updated_by' => $user->id,
-            ...$validated
+            'is_active' => $validated['is_active'] ?? true,
+            ...array_diff_key($validated, array_flip(['is_active']))
         ]);
 
         return response()->json(
@@ -109,6 +110,34 @@ class ImamController extends Controller implements HasMiddleware
 
         return response()->json(
             ImamResource::customResponse(true, 'Data imam berhasil dihapus.', null)
+        );
+    }
+
+    /**
+     * Memperbarui status aktif imam.
+     */
+    public function updateStatus(Request $request, Imam $imam)
+    {
+        $request->validate([
+            'is_active' => 'required|boolean'
+        ]);
+
+        $user = $request->user();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'User tidak terautentikasi.'
+            ], 403);
+        }
+
+        $imam->update([
+            'is_active' => $request->is_active,
+            'updated_by' => $user->id
+        ]);
+
+        return response()->json(
+            ImamResource::customResponse(true, 'Status imam berhasil diperbarui!', new ImamResource($imam->load(['profileMasjid', 'createdBy', 'updatedBy'])))
         );
     }
 

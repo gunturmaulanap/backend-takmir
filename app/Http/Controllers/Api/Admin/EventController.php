@@ -26,6 +26,7 @@ class EventController extends Controller implements HasMiddleware
         ];
     }
 
+
     /**
      * Menampilkan list event.
      * Trait HasMasjid akan otomatis memfilter berdasarkan masjid yang login.
@@ -33,6 +34,21 @@ class EventController extends Controller implements HasMiddleware
     public function index()
     {
         $query = Event::with('category');
+
+        // Debug mode - show all events for debugging
+        if (request()->get('debug') === 'true') {
+            $allEvents = Event::select('id', 'nama', 'slug', 'profile_masjid_id')
+                ->with('profileMasjid:id,nama')
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Debug: List semua events',
+                'data' => $allEvents,
+                'total' => $allEvents->count(),
+                'user_profile_masjid_id' => request()->user()->getMasjidProfile()?->id
+            ]);
+        }
 
         // Filter berdasarkan category_id jika ada
         if (request()->has('category_id') && request('category_id')) {
@@ -91,6 +107,84 @@ class EventController extends Controller implements HasMiddleware
     }
 
     /**
+     * Menampilkan detail event berdasarkan slug.
+     */
+    public function showBySlug($slug)
+    {
+        try {
+            // Cari event berdasarkan slug exact
+            $event = Event::with('category')->where('slug', $slug)->first();
+
+            if ($event) {
+                return new EventResource(true, 'Detail data event berhasil dimuat.', $event);
+            }
+
+            // Cari event dengan nama yang mirip
+            $searchName = str_replace('-', ' ', $slug);
+            $similarEvent = Event::with('category')
+                ->where('nama', 'like', '%' . $searchName . '%')
+                ->first();
+
+            if ($similarEvent) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Event ditemukan dengan slug yang berbeda.',
+                    'data' => $similarEvent,
+                    'redirect' => [
+                        'old_slug' => $slug,
+                        'new_slug' => $similarEvent->slug,
+                        'should_redirect' => true
+                    ]
+                ], 200);
+            }
+
+            // Event tidak ditemukan
+            return response()->json([
+                'success' => false,
+                'message' => 'Event tidak ditemukan untuk slug: ' . $slug
+            ], 404);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat mengambil data event.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+
+    /**
+     * Mendapatkan saran event yang mirip
+     */
+    // private function getEventSuggestions($slug)
+    // {
+    //     $slugWords = array_filter(explode('-', $slug), function ($word) {
+    //         return strlen($word) > 2;
+    //     });
+
+    //     if (empty($slugWords)) {
+    //         return [];
+    //     }
+
+    //     $suggestions = Event::select('nama', 'slug')
+    //         ->where(function ($query) use ($slugWords) {
+    //             foreach ($slugWords as $word) {
+    //                 $query->orWhere('nama', 'like', '%' . $word . '%')
+    //                     ->orWhere('slug', 'like', '%' . $word . '%');
+    //             }
+    //         })
+    //         ->limit(5)
+    //         ->get();
+
+    //     return $suggestions->map(function ($event) {
+    //         return [
+    //             'nama' => $event->nama,
+    //             'slug' => $event->slug
+    //         ];
+    //     });
+    // }
+
+    /**
      * Memperbarui event.
      */
     public function update(UpdateEventRequest $request, Event $event)
@@ -124,7 +218,18 @@ class EventController extends Controller implements HasMiddleware
         // Merge dengan validated data
         $event->update(array_merge($validated, $updateData));
 
-        return new EventResource(true, 'Data event berhasil diperbarui.', $event);
+        // Reload event untuk mendapatkan data terbaru termasuk slug baru
+        $event->refresh();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Data event berhasil diperbarui.',
+            'data' => $event->load('category'),
+            'meta' => [
+                'new_slug' => $event->slug,
+                'old_slug_updated' => true
+            ]
+        ]);
     }
 
     /**

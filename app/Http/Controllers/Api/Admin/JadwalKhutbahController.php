@@ -225,7 +225,6 @@ class JadwalKhutbahController extends Controller implements HasMiddleware
         if (isset($data['imam_id'])) {
             $imam = Imam::where('id', $data['imam_id'])
                 ->where('profile_masjid_id', $profileMasjidId)
-                ->where('is_active', true)
                 ->first();
             if (!$imam) {
                 return ['valid' => false, 'message' => 'Imam tidak ditemukan atau tidak aktif di masjid ini.'];
@@ -236,7 +235,6 @@ class JadwalKhutbahController extends Controller implements HasMiddleware
         if (isset($data['khatib_id'])) {
             $khatib = Khatib::where('id', $data['khatib_id'])
                 ->where('profile_masjid_id', $profileMasjidId)
-                ->where('is_active', true)
                 ->first();
             if (!$khatib) {
                 return ['valid' => false, 'message' => 'Khatib tidak ditemukan atau tidak aktif di masjid ini.'];
@@ -247,7 +245,6 @@ class JadwalKhutbahController extends Controller implements HasMiddleware
         if (isset($data['muadzin_id'])) {
             $muadzin = Muadzin::where('id', $data['muadzin_id'])
                 ->where('profile_masjid_id', $profileMasjidId)
-                ->where('is_active', true)
                 ->first();
             if (!$muadzin) {
                 return ['valid' => false, 'message' => 'Muadzin tidak ditemukan atau tidak aktif di masjid ini.'];

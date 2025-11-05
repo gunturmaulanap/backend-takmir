@@ -28,7 +28,6 @@ class StoreJadwalKhutbahRequest extends FormRequest
             'khatib_id' => 'nullable|exists:khatibs,id',
             'muadzin_id' => 'nullable|exists:muadzins,id',
             'tema_khutbah' => 'nullable|string',
-            'is_active' => 'nullable|boolean',
             'profile_masjid_id' => 'nullable|exists:profile_masjids,id', // Untuk superadmin
         ];
     }
@@ -48,7 +47,6 @@ class StoreJadwalKhutbahRequest extends FormRequest
             'imam_id.exists' => 'Imam tidak ditemukan.',
             'khatib_id.exists' => 'Khatib tidak ditemukan.',
             'muadzin_id.exists' => 'Muadzin tidak ditemukan.',
-            'is_active.boolean' => 'Status aktif harus berupa boolean.',
             'profile_masjid_id.exists' => 'Profile masjid tidak ditemukan.',
         ];
     }

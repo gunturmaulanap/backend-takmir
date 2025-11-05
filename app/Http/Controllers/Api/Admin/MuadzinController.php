@@ -19,7 +19,7 @@ class MuadzinController extends Controller implements HasMiddleware
         return [
             new Middleware(['permission:muadzins.index'], only: ['index']),
             new Middleware(['permission:muadzins.create'], only: ['store']),
-            new Middleware(['permission:muadzins.edit'], only: ['update']),
+            new Middleware(['permission:muadzins.edit'], only: ['update', 'updateStatus']),
             new Middleware(['permission:muadzins.delete'], only: ['destroy']),
         ];
     }
@@ -73,7 +73,8 @@ class MuadzinController extends Controller implements HasMiddleware
             'profile_masjid_id' => $profileMasjidId,
             'created_by' => $user->id,
             'updated_by' => $user->id,
-            ...$validated
+            'is_active' => $validated['is_active'] ?? true,
+            ...array_diff_key($validated, array_flip(['is_active']))
         ]);
 
         return response()->json(
@@ -109,6 +110,34 @@ class MuadzinController extends Controller implements HasMiddleware
 
         return response()->json(
             MuadzinResource::customResponse(true, 'Data muadzin berhasil dihapus.', null)
+        );
+    }
+
+    /**
+     * Memperbarui status aktif muadzin.
+     */
+    public function updateStatus(Request $request, Muadzin $muadzin)
+    {
+        $request->validate([
+            'is_active' => 'required|boolean'
+        ]);
+
+        $user = $request->user();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'User tidak terautentikasi.'
+            ], 403);
+        }
+
+        $muadzin->update([
+            'is_active' => $request->is_active,
+            'updated_by' => $user->id
+        ]);
+
+        return response()->json(
+            MuadzinResource::customResponse(true, 'Status muadzin berhasil diperbarui!', new MuadzinResource($muadzin->load(['profileMasjid', 'createdBy', 'updatedBy'])))
         );
     }
 

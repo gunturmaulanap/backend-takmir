@@ -23,7 +23,6 @@ return new class extends Migration
             $table->string('umur');
             $table->string('jabatan');
             $table->text('deskripsi_tugas')->nullable();
-            $table->string('image')->nullable();
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();

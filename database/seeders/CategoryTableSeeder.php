@@ -16,11 +16,11 @@ class CategoryTableSeeder extends Seeder
     public function run(): void
     {
         $categories = [
-            ['name' => 'Kajian Rutin', 'color' => 'Blue'],
-            ['name' => 'Pelatihan', 'color' => 'Green'],
-            ['name' => 'Sosial', 'color' => 'Purple'],
-            ['name' => 'Umum', 'color' => 'Orange'],
-            ['name' => 'Keagamaan', 'color' => 'Indigo'],
+            ['nama' => 'Kajian Rutin', 'warna' => 'Blue'],
+            ['nama' => 'Pelatihan', 'warna' => 'Green'],
+            ['nama' => 'Sosial', 'warna' => 'Purple'],
+            ['nama' => 'Umum', 'warna' => 'Orange'],
+            ['nama' => 'Keagamaan', 'warna' => 'Indigo'],
         ];
 
         for ($masjidId = 1; $masjidId <= 6; $masjidId++) {
@@ -29,9 +29,9 @@ class CategoryTableSeeder extends Seeder
 
             foreach ($selectedCategories as $category) {
                 Category::create([
-                    'name' => $category['name'],
-                    'slug' => Str::slug($category['name']),
-                    'color' => $category['color'],
+                    'nama' => $category['nama'],
+                    'slug' => Str::slug($category['nama']),
+                    'warna' => $category['warna'],
                     'profile_masjid_id' => $masjidId,
                     'created_by' => $userId,
                     'updated_by' => $userId,

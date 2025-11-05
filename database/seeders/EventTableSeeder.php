@@ -44,21 +44,33 @@ class EventTableSeeder extends Seeder
 
         foreach ($masjids as $masjid) {
             $userId = $masjid->user_id;
-            // Ambil 3 kategori random untuk event
-            $categories = Category::where('profile_masjid_id', $masjid->id)->inRandomOrder()->take(3)->get();
-            foreach ($categories as $category) {
-                $categoryName = $category->name;
+
+            // Generate 4 event untuk setiap masjid
+            for ($i = 1; $i <= 4; $i++) {
+                // Ambil kategori random untuk setiap event
+                $category = Category::where('profile_masjid_id', $masjid->id)->inRandomOrder()->first();
+
+                if (!$category) {
+                    // Jika tidak ada kategori, skip masjid ini
+                    continue;
+                }
+
+                $categoryName = $category->nama;
                 $templateList = $eventTemplates[$categoryName] ?? ['Event Masjid'];
                 $eventName = $templateList[array_rand($templateList)];
+
+                // Tambahkan nomor event untuk memastikan nama unik
+                $uniqueEventName = $eventName . ' ' . $i;
+
                 $event = Event::create([
                     'category_id' => $category->id,
                     'profile_masjid_id' => $masjid->id,
-                    'nama' => $eventName,
-                    'slug' => Str::slug($eventName) . '-' . Str::random(3),
+                    'nama' => $uniqueEventName,
+                    'slug' => Str::slug($uniqueEventName),
                     'tanggal_event' => now()->addDays(rand(1, 60)),
                     'waktu_event' => now()->addHours(rand(1, 12))->format('H:i'),
                     'tempat_event' => $this->generateRandomLocation($masjid->nama),
-                    'deskripsi' => 'Kegiatan: ' . $eventName . ' di Masjid ' . $masjid->nama,
+                    'deskripsi' => 'Kegiatan: ' . $eventName . ' ke-' . $i . ' di Masjid ' . $masjid->nama,
                     'image' => null,
                     'created_by' => $userId,
                     'updated_by' => $userId,

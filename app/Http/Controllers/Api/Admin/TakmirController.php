@@ -6,10 +6,10 @@ use App\Models\Takmir;
 use App\Models\User;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\TakmirResource;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Spatie\Permission\Models\Role;
+use Illuminate\Support\Str;
+use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
 use App\Http\Requests\StoreTakmirRequest;
@@ -22,7 +22,7 @@ class TakmirController extends Controller implements HasMiddleware
         return [
             new Middleware(['permission:takmirs.index'], only: ['index']),
             new Middleware(['permission:takmirs.create'], only: ['store']),
-            new Middleware(['permission:takmirs.edit'], only: ['update']),
+            new Middleware(['permission:takmirs.edit'], only: ['update', 'updateStatus']),
             new Middleware(['permission:takmirs.delete'], only: ['destroy']),
         ];
     }
@@ -66,18 +66,18 @@ class TakmirController extends Controller implements HasMiddleware
             // 2. Berikan role 'takmir'
             $newUser->assignRole('takmir');
 
-            // 3. Upload gambar
-            $imageName = time() . '.' . $request->file('image')->getClientOriginalExtension();
-            $request->file('image')->storeAs('photos', $imageName, 'public');
-
-            // 4. Buat data Takmir dengan audit columns
+            // 3. Buat data Takmir dengan audit columns
             return Takmir::create([
                 'user_id' => $newUser->id,
                 'profile_masjid_id' => $profileMasjid->id,
-                'image' => $imageName,
+                'nama' => $validated['nama'],
+                'slug' => Str::slug($validated['nama']),
+                'jabatan' => $validated['jabatan'],
+                'no_handphone' => $validated['no_handphone'] ?? null,
+                'umur' => $validated['umur'] ?? null,
+                'deskripsi_tugas' => $validated['deskripsi_tugas'] ?? null,
                 'created_by' => $adminUser->id,
                 'updated_by' => $adminUser->id,
-                ...$validated // Gunakan sisa data yang sudah divalidasi
             ]);
         });
 
@@ -101,38 +101,93 @@ class TakmirController extends Controller implements HasMiddleware
             ], 403);
         }
 
-        $imageName = $takmir->image;
-
-        if ($request->hasFile('image')) {
-            if ($takmir->image) Storage::disk('public')->delete('photos/' . $takmir->image);
-
-            $imageName = time() . '.' . $request->file('image')->getClientOriginalExtension();
-            $request->file('image')->storeAs('photos', $imageName, 'public');
-        }
-
-        DB::transaction(function () use ($takmir, $validated, $imageName, $user) {
-            // Update data takmir dengan audit column
-            $takmir->update(array_merge($validated, [
-                'image' => $imageName,
+        DB::transaction(function () use ($takmir, $validated, $user) {
+            // Prepare data untuk update takmir (exclude user fields)
+            $takmirUpdateData = [
+                'nama' => $validated['nama'],
+                'jabatan' => $validated['jabatan'],
+                'no_handphone' => $validated['no_handphone'] ?? null,
+                'umur' => $validated['umur'] ?? null,
+                'deskripsi_tugas' => $validated['deskripsi_tugas'] ?? null,
                 'updated_by' => $user->id
-            ]));
+            ];
 
-            // Sinkronkan nama di tabel user jika berubah
-            if ($takmir->user && $takmir->user->name !== $validated['nama']) {
-                $takmir->user->update(['name' => $validated['nama']]);
+            // Update data takmir
+            $takmir->update($takmirUpdateData);
+
+            // Update data user terkait jika ada
+            if ($takmir->user) {
+                $userData = [];
+
+                // Update nama user (sync dengan takmir.nama)
+                if ($takmir->user->name !== $validated['nama']) {
+                    $userData['name'] = $validated['nama'];
+                }
+
+                // Update username jika dikirim
+                if (isset($validated['username']) && $validated['username'] !== $takmir->user->username) {
+                    $userData['username'] = $validated['username'];
+                }
+
+                // Update email jika dikirim
+                if (isset($validated['email']) && $validated['email'] !== $takmir->user->email) {
+                    $userData['email'] = $validated['email'];
+                }
+
+                // Update password jika dikirim
+                if (isset($validated['password']) && !empty($validated['password'])) {
+                    $userData['password'] = Hash::make($validated['password']);
+                }
+
+                // Update user jika ada perubahan
+                if (!empty($userData)) {
+                    $takmir->user->update($userData);
+                }
             }
         });
 
         return new TakmirResource(true, 'Data takmir berhasil diperbarui!', $takmir->load(['user', 'profileMasjid']));
     }
 
+    public function updateStatus(Request $request, Takmir $takmir)
+    {
+        $request->validate([
+            'is_active' => 'required|boolean'
+        ]);
+
+        $user = $request->user();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'User tidak terautentikasi.'
+            ], 403);
+        }
+
+        if (!$takmir->user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'User terkait tidak ditemukan.'
+            ], 404);
+        }
+
+        // Update status di tabel users (single source of truth)
+        $takmir->user->update([
+            'is_active' => $request->is_active
+        ]);
+
+        // Update audit trail di tabel takmir
+        $takmir->update([
+            'updated_by' => $user->id
+        ]);
+
+        $status = $request->is_active ? 'diaktifkan' : 'dinonaktifkan';
+        return new TakmirResource(true, "Takmir berhasil {$status}!", $takmir->load(['user', 'profileMasjid']));
+    }
+
     public function destroy(Takmir $takmir)
     {
         DB::transaction(function () use ($takmir) {
-            if ($takmir->image) {
-                Storage::disk('public')->delete('photos/' . $takmir->image);
-            }
-
             // Hapus user terkait terlebih dahulu
             if ($takmir->user) {
                 $takmir->user->delete();

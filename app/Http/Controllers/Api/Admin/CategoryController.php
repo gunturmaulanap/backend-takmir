@@ -10,9 +10,13 @@ use App\Http\Resources\CategoryResource;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 
+/**
+ * @method \App\Models\User user()
+ */
 class CategoryController extends Controller implements HasMiddleware
 {
     /**
@@ -58,6 +62,16 @@ class CategoryController extends Controller implements HasMiddleware
 
         return null;
     }
+    /**
+     * @method \App\Models\User user()
+     */
+    public function rules(): array
+    {
+        return [
+            'nama' => 'required|string|max:255|unique:categories,nama,NULL,id,profile_masjid_id,' . $this->user()->getMasjidProfile()->id,
+            'warna' => 'nullable|string|in:Blue,Green,Purple,Orange,Indigo',
+        ];
+    }
 
     /**
      * Display a listing of the resource.
@@ -86,7 +100,7 @@ class CategoryController extends Controller implements HasMiddleware
 
             // Search functionality
             if ($request->filled('search')) {
-                $query->where('name', 'like', '%' . $request->search . '%');
+                $query->where('nama', 'like', '%' . $request->search . '%');
             }
 
             $categories = $query->latest()->paginate(10);
@@ -117,8 +131,8 @@ class CategoryController extends Controller implements HasMiddleware
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
-            'color' => 'nullable|string|in:Blue,Green,Purple,Orange,Indigo',
+            'nama' => 'required|string|max:255',
+            'warna' => 'nullable|string|in:Blue,Green,Purple,Orange,Indigo',
         ]);
 
         if ($validator->fails()) {
@@ -149,14 +163,14 @@ class CategoryController extends Controller implements HasMiddleware
                 ], 400);
             }
 
-            // Validasi color jika ada
-            $color = $request->color ?? 'Blue';
+            // Validasi warna jika ada
+            $warna = $request->warna ?? 'Blue';
 
             //create category dengan audit columns dan profile_masjid_id
             $category = Category::create([
-                'name' => $request->name,
-                'slug' => Str::slug($request->name, '-'),
-                'color' => $color,
+                'nama' => $request->nama,
+                'slug' => Str::slug($request->nama, '-'),
+                'warna' => $warna,
                 'profile_masjid_id' => $profileMasjidId,
                 'created_by' => $user->id,
                 'updated_by' => $user->id,
@@ -171,6 +185,48 @@ class CategoryController extends Controller implements HasMiddleware
             return response()->json([
                 'success' => false,
                 'message' => 'Terjadi kesalahan saat menyimpan data kategori.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function showBySlug($slug)
+    {
+        try {
+            // Cari category berdasarkan slug exact
+            $category = Category::where('slug', $slug)->first();
+
+            if ($category) {
+                return new CategoryResource(true, 'Detail data category berhasil dimuat.', $category);
+            }
+
+            // Cari category dengan nama yang mirip
+            $searchName = str_replace('-', ' ', $slug);
+            $similarCategory = Category::where('nama', 'like', '%' . $searchName . '%')->first();
+
+            if ($similarCategory) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Category ditemukan dengan slug yang berbeda.',
+                    'data' => $similarCategory,
+                    'redirect' => [
+                        'old_slug' => $slug,
+                        'new_slug' => $similarCategory->slug,
+                        'should_redirect' => true
+                    ]
+                ], 200);
+            }
+
+            // Category tidak ditemukan
+            return response()->json([
+                'success' => false,
+                'message' => 'Category tidak ditemukan untuk slug: ' . $slug
+            ], 404);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat mengambil data category.',
                 'error' => $e->getMessage()
             ], 500);
         }
@@ -198,8 +254,8 @@ class CategoryController extends Controller implements HasMiddleware
     public function update(Request $request, Category $category)
     {
         $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
-            'color' => 'nullable|string|in:Blue,Green,Purple,Orange,Indigo',
+            'nama' => 'required|string|max:255',
+            'warna' => 'nullable|string|in:Blue,Green,Purple,Orange,Indigo',
         ]);
 
         if ($validator->fails()) {
@@ -221,9 +277,9 @@ class CategoryController extends Controller implements HasMiddleware
             }
 
             $category->update([
-                'name' => $request->name,
-                'slug' => Str::slug($request->name, '-'),
-                'color' => $request->color ?? $category->color,
+                'nama' => $request->nama,
+                'slug' => Str::slug($request->nama, '-'),
+                'warna' => $request->warna ?? $category->warna,
                 'updated_by' => $user->id,
             ]);
 
@@ -286,7 +342,7 @@ class CategoryController extends Controller implements HasMiddleware
                 Log::info("Applied profile_masjid_id filter in all method: " . $profileMasjidId);
             }
 
-            $categories = $query->select('id', 'name', 'color')->get();
+            $categories = $query->select('id', 'nama', 'warna')->get();
 
             Log::info("Categories found: " . $categories->count());
 

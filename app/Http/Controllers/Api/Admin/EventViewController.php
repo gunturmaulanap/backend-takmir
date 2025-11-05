@@ -123,7 +123,7 @@ class EventViewController extends Controller implements HasMiddleware
     {
         if ($eventView->type === 'event' && $eventView->event) {
             return [
-                'category' => $eventView->event->category->name ?? null,
+                'category' => $eventView->event->category->nama ?? null,
                 'image' => $eventView->event->image ?? null,
             ];
         }

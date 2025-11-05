@@ -18,6 +18,7 @@ return new class extends Migration
             $table->string('slug');
             $table->unique(['slug', 'profile_masjid_id']);
             $table->string('no_handphone');
+            $table->boolean('is_active')->default(true);
             $table->text('alamat');
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();

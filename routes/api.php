@@ -8,6 +8,8 @@ use App\Http\Controllers\Api\Superadmin\DashboardController;
 use App\Http\Controllers\Api\Superadmin\PermissionController;
 use App\Http\Controllers\Api\Superadmin\RoleController;
 use App\Http\Controllers\Api\Superadmin\UserController;
+use App\Http\Controllers\Api\Superadmin\ProfileMasjidController;
+use App\Http\Controllers\Api\Superadmin\AdminController;
 use App\Http\Controllers\Api\Superadmin\CategoryController as SuperadminCategoryController;
 use App\Http\Controllers\Api\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controllers\Api\Admin\JamaahController;
@@ -53,6 +55,7 @@ Route::group(['middleware' => 'auth:api'], function () {
             'update' => 'admin.categories.update',
             'destroy' => 'admin.categories.destroy',
         ]);
+        Route::get('/categories/slug/{slug}', [AdminCategoryController::class, 'showBySlug']);
 
         // Transaksi Keuangan API - specific routes HARUS sebelum apiResource
         Route::get('/transactions/dashboard', [TransaksiKeuanganController::class, 'dashboard']);
@@ -62,12 +65,26 @@ Route::group(['middleware' => 'auth:api'], function () {
 
         // Takmir API
         Route::apiResource('/takmirs', TakmirController::class);
+        Route::patch('/takmirs/{takmir}/status', [TakmirController::class, 'updateStatus']);
+
+        // Khatib API
+        Route::apiResource('/khatibs', KhatibController::class);
+        Route::patch('/khatibs/{khatib}/status', [KhatibController::class, 'updateStatus']);
+
+        // Imam API
+        Route::apiResource('/imams', ImamController::class);
+        Route::patch('/imams/{imam}/status', [ImamController::class, 'updateStatus']);
+
+        // Muadzin API
+        Route::apiResource('/muadzins', MuadzinController::class);
+        Route::patch('/muadzins/{muadzin}/status', [MuadzinController::class, 'updateStatus']);
 
         // Jamaah API
         Route::apiResource('/jamaahs', JamaahController::class);
 
         // Events API
         Route::apiResource('/events', EventController::class);
+        Route::get('/events/slug/{slug}', [EventController::class, 'showBySlug']); // Keep old for compatibility
 
         // Event Views (Kalender) API
         Route::get('/event-views', [EventViewController::class, 'index']);
@@ -115,6 +132,18 @@ Route::prefix('superadmin')->as('superadmin.')->group(function () {
         Route::apiResource('/users', UserController::class);
         Route::put('/users/{id}/toggle-active', [UserController::class, 'toggleActive'])
             ->middleware(['auth:api', 'permission:users.edit']);
+
+        // Profile Masjid API
+        Route::apiResource('/profile-masjids', ProfileMasjidController::class);
+        Route::put('/profile-masjids/{id}/toggle-active', [ProfileMasjidController::class, 'toggleActive'])
+            ->middleware(['auth:api', 'permission:profile_masjids.edit']);
+
+        // Admin API (Pengurus Masjid)
+        Route::apiResource('/admins', AdminController::class);
+        Route::put('/admins/{id}/toggle-active', [AdminController::class, 'toggleActive'])
+            ->middleware(['auth:api', 'permission:admins.edit']);
+        Route::get('/admins/unassigned', [AdminController::class, 'unassigned'])
+            ->middleware(['auth:api', 'permission:admins.index']);
     });
 });
 
@@ -142,3 +171,5 @@ Route::get('/debug/current-user', function (\Illuminate\Http\Request $request) {
         'getMasjidProfile_result' => $user->getMasjidProfile() ? $user->getMasjidProfile()->id : null
     ]);
 })->middleware(['auth:api']);
+
+// Routes for generating shareable event cards (public access)

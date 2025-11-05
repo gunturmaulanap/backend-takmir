@@ -25,16 +25,20 @@ class UpdateTakmirRequest extends FormRequest
      */
     public function rules(): array
     {
-        // Validasi hanya untuk data yang boleh diubah.
-        // Data user seperti email/password tidak diubah di sini.
+        // Validasi untuk data takmir dan user terkait
         return [
+            // Takmir fields
             'nama' => 'required|string|max:255',
             'jabatan' => 'required|string|max:255',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'category_id' => 'required|exists:categories,id',
-            'no_handphone' => 'nullable|string|max:15',
-            'umur' => 'nullable|integer|min:1',
+            'no_handphone' => 'required|string|max:15',
+            'umur' => 'required|integer|min:1|max:120',
             'deskripsi_tugas' => 'nullable|string',
+            'is_active' => 'boolean',
+
+            // User fields
+            'username' => 'nullable|string|max:255|unique:users,username,' . $this->route('takmir')?->user_id,
+            'email' => 'nullable|string|email|max:255|unique:users,email,' . $this->route('takmir')?->user_id,
+            'password' => 'nullable|string|min:6|confirmed',
         ];
     }
 }

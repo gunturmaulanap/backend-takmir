@@ -20,7 +20,7 @@ class JadwalKhutbah extends Model
         'khatib_id',
         'muadzin_id',
         'profile_masjid_id',
-        'is_active',
+        'tanggal_khutbah',
         'tema_khutbah',
         'created_by',
         'updated_by',

@@ -83,8 +83,6 @@ class JadwalKhutbahResource extends JsonResource
                 'no_handphone' => $this->muadzin?->no_handphone,
             ],
             'tema_khutbah' => $this->tema_khutbah,
-            'is_active' => (bool) $this->is_active,
-            'is_active_label' => $this->is_active ? 'Aktif' : 'Tidak Aktif',
             'created_by' => [
                 'id' => $this->createdBy?->id,
                 'name' => $this->createdBy?->name,
