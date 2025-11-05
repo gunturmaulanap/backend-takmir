@@ -24,6 +24,43 @@ class PermissionsTableSeeder extends Seeder
         //permission for permissions
         Permission::create(['name' => 'permissions.index', 'guard_name' => 'api']);
 
+
+        //permission for categories
+        Permission::create([
+            'name' => 'admins.index',
+            'guard_name' => 'api'
+        ]);
+        Permission::create([
+            'name' => 'admins.create',
+            'guard_name' => 'api'
+        ]);
+        Permission::create([
+            'name' => 'admins.edit',
+            'guard_name' => 'api'
+        ]);
+        Permission::create([
+            'name' => 'admins.delete',
+            'guard_name' => 'api'
+        ]);
+
+        //permissions for profile-masjids
+        Permission::create([
+            'name' => 'profile-masjids.index',
+            'guard_name' => 'api'
+        ]);
+        Permission::create([
+            'name' => 'profile-masjids.create',
+            'guard_name' => 'api'
+        ]);
+        Permission::create([
+            'name' => 'profile-masjids.edit',
+            'guard_name' => 'api'
+        ]);
+        Permission::create([
+            'name' => 'profile-masjids.delete',
+            'guard_name' => 'api'
+        ]);
+
         //permission for categories
         Permission::create([
             'name' => 'categories.index',
