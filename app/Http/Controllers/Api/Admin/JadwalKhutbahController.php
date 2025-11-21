@@ -21,53 +21,17 @@ class JadwalKhutbahController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
-            new Middleware(['permission:jadwal-khutbah.index'], only: ['index']),
-            new Middleware(['permission:jadwal-khutbah.create'], only: ['store']),
-            new Middleware(['permission:jadwal-khutbah.edit'], only: ['update']),
-            new Middleware(['permission:jadwal-khutbah.delete'], only: ['destroy']),
+            new Middleware(['permission:jadwal-petugas.index'], only: ['index']),
+            new Middleware(['permission:jadwal-petugas.create'], only: ['store']),
+            new Middleware(['permission:jadwal-petugas.edit'], only: ['update']),
+            new Middleware(['permission:jadwal-petugas.delete'], only: ['destroy']),
         ];
     }
 
     public function index(Request $request)
     {
-        $user = $request->user();
-        $profileMasjidId = $this->getProfileMasjidId($user, $request);
+        $query = JadwalKhutbah::with(['profileMasjid', 'createdBy', 'updatedBy', 'imam', 'khatib', 'muadzin']);
 
-        if (!$profileMasjidId) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Profile masjid tidak ditemukan.'
-            ], 400);
-        }
-
-        $query = JadwalKhutbah::with(['profileMasjid', 'imam', 'khatib', 'muadzin', 'createdBy', 'updatedBy'])
-            ->where('profile_masjid_id', $profileMasjidId);
-
-        // Filter berdasarkan tanggal
-        if ($request->filled('start_date') && $request->filled('end_date')) {
-            $query->whereBetween('tanggal', [$request->start_date, $request->end_date]);
-        }
-
-        // Filter berdasarkan bulan
-        if ($request->filled('year') && $request->filled('month')) {
-            $query->whereYear('tanggal', $request->year)
-                ->whereMonth('tanggal', $request->month);
-        }
-
-        // Filter berdasarkan imam
-        if ($request->filled('imam_id')) {
-            $query->where('imam_id', $request->imam_id);
-        }
-
-        // Filter berdasarkan khatib
-        if ($request->filled('khatib_id')) {
-            $query->where('khatib_id', $request->khatib_id);
-        }
-
-        // Filter berdasarkan muadzin
-        if ($request->filled('muadzin_id')) {
-            $query->where('muadzin_id', $request->muadzin_id);
-        }
 
         $jadwalKhutbah = $query->orderBy('tanggal', 'desc')->paginate(15);
 

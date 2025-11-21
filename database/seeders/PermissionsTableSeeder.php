@@ -24,6 +24,25 @@ class PermissionsTableSeeder extends Seeder
         //permission for permissions
         Permission::create(['name' => 'permissions.index', 'guard_name' => 'api']);
 
+        Permission::create(['name' => 'dashboards.index', 'guard_name' => 'api']);
+
+
+        Permission::create([
+            'name' => 'staffs.index',
+            'guard_name' => 'api'
+        ]);
+        Permission::create([
+            'name' => 'staffs.create',
+            'guard_name' => 'api'
+        ]);
+        Permission::create([
+            'name' => 'staffs.edit',
+            'guard_name' => 'api'
+        ]);
+        Permission::create([
+            'name' => 'staffs.delete',
+            'guard_name' => 'api'
+        ]);
 
         //permission for categories
         Permission::create([
@@ -312,21 +331,21 @@ class PermissionsTableSeeder extends Seeder
             'name' => 'transaksi-keuangan.delete',
             'guard_name' => 'api'
         ]);
-        //permission for jadwal khutbah
+        //permission for jadwal petugas
         Permission::create([
-            'name' => 'jadwal-khutbah.index',
+            'name' => 'jadwal-petugas.index',
             'guard_name' => 'api'
         ]);
         Permission::create([
-            'name' => 'jadwal-khutbah.create',
+            'name' => 'jadwal-petugas.create',
             'guard_name' => 'api'
         ]);
         Permission::create([
-            'name' => 'jadwal-khutbah.edit',
+            'name' => 'jadwal-petugas.edit',
             'guard_name' => 'api'
         ]);
         Permission::create([
-            'name' => 'jadwal-khutbah.delete',
+            'name' => 'jadwal-petugas.delete',
             'guard_name' => 'api'
         ]);
     }

@@ -22,7 +22,7 @@ class StoreJadwalKhutbahRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'tanggal' => 'required|date|after_or_equal:today',
+            'tanggal' => 'required|date|after_or_equal:today|unique:jadwal_khutbahs,tanggal,NULL,id,profile_masjid_id,' . $this->user()->getMasjidProfile()->id,
             'hari' => 'nullable|string|max:20',
             'imam_id' => 'nullable|exists:imams,id',
             'khatib_id' => 'nullable|exists:khatibs,id',
@@ -41,6 +41,7 @@ class StoreJadwalKhutbahRequest extends FormRequest
     {
         return [
             'tanggal.required' => 'Tanggal khutbah wajib diisi.',
+            'tanggal.unique' => 'Jadwal khutbah untuk tanggal ini sudah ada.',
             'tanggal.date' => 'Format tanggal tidak valid.',
             'tanggal.after_or_equal' => 'Tanggal khutbah tidak boleh di masa lalu.',
             'hari.max' => 'Hari maksimal 20 karakter.',

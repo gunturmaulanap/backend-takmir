@@ -35,37 +35,8 @@ class EventController extends Controller implements HasMiddleware
     {
         $query = Event::with('category');
 
-        // Debug mode - show all events for debugging
-        if (request()->get('debug') === 'true') {
-            $allEvents = Event::select('id', 'nama', 'slug', 'profile_masjid_id')
-                ->with('profileMasjid:id,nama')
-                ->get();
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Debug: List semua events',
-                'data' => $allEvents,
-                'total' => $allEvents->count(),
-                'user_profile_masjid_id' => request()->user()->getMasjidProfile()?->id
-            ]);
-        }
-
-        // Filter berdasarkan category_id jika ada
-        if (request()->has('category_id') && request('category_id')) {
-            $query->where('category_id', request('category_id'));
-        }
-
-        // Filter berdasarkan nama jika ada
-        if (request()->has('nama') && request('nama')) {
-            $query->where('nama', 'like', '%' . request('nama') . '%');
-        }
-
-        // Filter berdasarkan tanggal jika ada
-        if (request()->has('tanggal_event') && request('tanggal_event')) {
-            $query->whereDate('tanggal_event', request('tanggal_event'));
-        }
-
-        $events = $query->latest()->paginate(10);
+        $events = $query->latest()->paginate(4);
         return new EventResource(true, 'List Data Events', $events);
     }
 
@@ -109,48 +80,7 @@ class EventController extends Controller implements HasMiddleware
     /**
      * Menampilkan detail event berdasarkan slug.
      */
-    public function showBySlug($slug)
-    {
-        try {
-            // Cari event berdasarkan slug exact
-            $event = Event::with('category')->where('slug', $slug)->first();
 
-            if ($event) {
-                return new EventResource(true, 'Detail data event berhasil dimuat.', $event);
-            }
-
-            // Cari event dengan nama yang mirip
-            $searchName = str_replace('-', ' ', $slug);
-            $similarEvent = Event::with('category')
-                ->where('nama', 'like', '%' . $searchName . '%')
-                ->first();
-
-            if ($similarEvent) {
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Event ditemukan dengan slug yang berbeda.',
-                    'data' => $similarEvent,
-                    'redirect' => [
-                        'old_slug' => $slug,
-                        'new_slug' => $similarEvent->slug,
-                        'should_redirect' => true
-                    ]
-                ], 200);
-            }
-
-            // Event tidak ditemukan
-            return response()->json([
-                'success' => false,
-                'message' => 'Event tidak ditemukan untuk slug: ' . $slug
-            ], 404);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Terjadi kesalahan saat mengambil data event.',
-                'error' => $e->getMessage()
-            ], 500);
-        }
-    }
 
 
     /**

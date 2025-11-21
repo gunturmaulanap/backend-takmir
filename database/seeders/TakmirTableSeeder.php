@@ -39,9 +39,10 @@ class TakmirTableSeeder extends Seeder
 
         foreach ($masjids as $masjid) {
             for ($i = 1; $i <= 5; $i++) {
-                $username = Str::slug($masjid->nama) . '_takmir' . $i;
+                $namaTakmir = 'Takmir ' . $i . ' ' . $masjid->nama;
+                $username = Str::slug($namaTakmir);
                 $user = User::create([
-                    'name'     => 'Takmir ' . $i . ' ' . $masjid->nama,
+                    'name'     => $namaTakmir,
                     'username' => $username,
                     'password' => Hash::make($defaultPassword),
                 ]);
@@ -49,7 +50,7 @@ class TakmirTableSeeder extends Seeder
                 $userId = $masjid->user_id;
 
                 // Generate random phone number
-                $phoneNumber = '08' . rand(11, 99) . '-' . rand(1000000, 9999999);
+                $phoneNumber = '08' . rand(11, 99)  . rand(1000000, 9999999);
 
                 // Generate random age between 25-65
                 $age = rand(25, 65);
@@ -57,12 +58,11 @@ class TakmirTableSeeder extends Seeder
                 // Get random jabatan and tugas
                 $jabatan = $jabatanOptions[$i - 1] ?? 'Anggota Takmir';
                 $deskripsiTugas = $tugasDescriptions[array_rand($tugasDescriptions)];
-
                 Takmir::create([
                     'user_id'           => $user->id,
                     'profile_masjid_id' => $masjid->id,
-                    'nama'              => 'Takmir ' . $i . ' ' . $masjid->nama,
-                    'slug'              => Str::slug($masjid->nama) . '-takmir' . $i,
+                    'nama'              => $namaTakmir,
+                    'slug'              => Str::slug($namaTakmir),
                     'jabatan'           => $jabatan,
                     'no_handphone'      => $phoneNumber,
                     'umur'              => $age,

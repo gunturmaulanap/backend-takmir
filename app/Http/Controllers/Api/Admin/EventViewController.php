@@ -28,12 +28,7 @@ class EventViewController extends Controller implements HasMiddleware
      */
     public function index(Request $request)
     {
-        // Validasi input filter bulan, tahun, dan tipe
-        $request->validate([
-            'month' => 'nullable|integer|between:1,12',
-            'year' => 'nullable|integer|min:2000',
-            'type' => 'nullable|in:event,jadwal_khutbah',
-        ]);
+
 
         // Tentukan bulan dan tahun, jika tidak ada, gunakan bulan dan tahun saat ini
         $month = $request->input('month', Carbon::now()->month);

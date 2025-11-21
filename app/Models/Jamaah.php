@@ -3,8 +3,10 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use App\Models\Traits\HasMasjid; // Import trait
-use Illuminate\Database\Eloquent\Relations\BelongsTo; // Tambahkan ini
+use App\Models\Traits\HasMasjid;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Models\User;
+use App\Models\ProfileMasjid;
 
 
 class Jamaah extends Model

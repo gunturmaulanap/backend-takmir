@@ -18,7 +18,6 @@ return new class extends Migration
             $table->string('nama');
             $table->string('slug');
             $table->unique(['slug', 'profile_masjid_id']);
-            $table->boolean('is_active')->default(true);
             $table->string('no_handphone');
             $table->string('umur');
             $table->string('jabatan');

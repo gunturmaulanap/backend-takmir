@@ -19,7 +19,6 @@ class Takmir extends Model
         'profile_masjid_id',
         'nama',
         'slug',
-        'is_active',
         'no_handphone',
         'umur',
         'jabatan',

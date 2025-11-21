@@ -10,7 +10,6 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Laravel\Sanctum\HasApiTokens;
 use Tymon\JWTAuth\Contracts\JWTSubject;
 use Illuminate\Database\Eloquent\Relations\HasOne;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOneThrough;
 
 class User extends Authenticatable implements JWTSubject
@@ -37,6 +36,7 @@ class User extends Authenticatable implements JWTSubject
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_active' => 'boolean',
         ];
     }
 
@@ -75,6 +75,12 @@ class User extends Authenticatable implements JWTSubject
         return $this->hasOneThrough(ProfileMasjid::class, Takmir::class, 'user_id', 'id', 'id', 'profile_masjid_id');
     }
 
+    // relasi dengan refresh tokens
+    public function refreshTokens()
+    {
+        return $this->hasMany(RefreshToken::class);
+    }
+
     /**
      * Dapatkan profil masjid yang terkait dengan user, terlepas dari rolenya.
      *
@@ -91,5 +97,13 @@ class User extends Authenticatable implements JWTSubject
         }
 
         return null;
+    }
+
+    /**
+     * Scope untuk mendapatkan user yang aktif saja
+     */
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true);
     }
 }

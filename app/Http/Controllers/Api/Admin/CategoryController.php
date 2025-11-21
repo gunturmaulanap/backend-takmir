@@ -7,12 +7,12 @@ use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\CategoryResource;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Routing\Controllers\HasMiddleware;
-use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use App\Http\Requests\StoreCategoryRequest;
+use App\Http\Requests\UpdateCategoryRequest;
 
 /**
  * @method \App\Models\User user()
@@ -103,7 +103,7 @@ class CategoryController extends Controller implements HasMiddleware
                 $query->where('nama', 'like', '%' . $request->search . '%');
             }
 
-            $categories = $query->latest()->paginate(10);
+            $categories = $query->latest()->paginate(6);
 
             $categories->appends(['search' => $request->search]);
 
@@ -126,61 +126,31 @@ class CategoryController extends Controller implements HasMiddleware
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Menyimpan category baru.
      */
-    public function store(Request $request)
+    public function store(StoreCategoryRequest $request)
     {
-        $validator = Validator::make($request->all(), [
-            'nama' => 'required|string|max:255',
-            'warna' => 'nullable|string|in:Blue,Green,Purple,Orange,Indigo',
-        ]);
+        try {
+            $validated = $request->validated();
 
-        if ($validator->fails()) {
+            // Ambil user dan profil masjid langsung dari request
+            $user = $request->user();
+            $masjidProfile = $user->getMasjidProfile();
+
+            $category = Category::create(array_merge($validated, [
+                'profile_masjid_id' => $masjidProfile->id,
+                'created_by'        => $user->id,
+                'updated_by'        => $user->id,
+                'slug'              => Str::slug($validated['nama']),
+            ]));
+
+            return new CategoryResource(true, 'Data category berhasil disimpan.', $category);
+        } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Validasi gagal.',
-                'errors' => $validator->errors()
+                'errors' => $e->errors()
             ], 422);
-        }
-
-        try {
-            $user = Auth::user();
-
-            if (!$user) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'User tidak terautentikasi.'
-                ], 403);
-            }
-
-            // Ambil profile_masjid_id berdasarkan role user
-            $profileMasjidId = $this->getProfileMasjidId($user, $request);
-
-            if (!$profileMasjidId) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Profile masjid tidak ditemukan.'
-                ], 400);
-            }
-
-            // Validasi warna jika ada
-            $warna = $request->warna ?? 'Blue';
-
-            //create category dengan audit columns dan profile_masjid_id
-            $category = Category::create([
-                'nama' => $request->nama,
-                'slug' => Str::slug($request->nama, '-'),
-                'warna' => $warna,
-                'profile_masjid_id' => $profileMasjidId,
-                'created_by' => $user->id,
-                'updated_by' => $user->id,
-            ]);
-
-            if ($category) {
-                return new CategoryResource(true, 'Data Category Berhasil Disimpan!', $category);
-            }
-
-            return new CategoryResource(false, 'Data Category Gagal Disimpan!', null);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -190,47 +160,6 @@ class CategoryController extends Controller implements HasMiddleware
         }
     }
 
-    public function showBySlug($slug)
-    {
-        try {
-            // Cari category berdasarkan slug exact
-            $category = Category::where('slug', $slug)->first();
-
-            if ($category) {
-                return new CategoryResource(true, 'Detail data category berhasil dimuat.', $category);
-            }
-
-            // Cari category dengan nama yang mirip
-            $searchName = str_replace('-', ' ', $slug);
-            $similarCategory = Category::where('nama', 'like', '%' . $searchName . '%')->first();
-
-            if ($similarCategory) {
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Category ditemukan dengan slug yang berbeda.',
-                    'data' => $similarCategory,
-                    'redirect' => [
-                        'old_slug' => $slug,
-                        'new_slug' => $similarCategory->slug,
-                        'should_redirect' => true
-                    ]
-                ], 200);
-            }
-
-            // Category tidak ditemukan
-            return response()->json([
-                'success' => false,
-                'message' => 'Category tidak ditemukan untuk slug: ' . $slug
-            ], 404);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Terjadi kesalahan saat mengambil data category.',
-                'error' => $e->getMessage()
-            ], 500);
-        }
-    }
 
     /**
      * Display the specified resource.
@@ -249,45 +178,40 @@ class CategoryController extends Controller implements HasMiddleware
     }
 
     /**
-     * Update the specified resource in storage.
+     * Memperbarui category.
      */
-    public function update(Request $request, Category $category)
+    public function update(UpdateCategoryRequest $request, Category $category)
     {
-        $validator = Validator::make($request->all(), [
-            'nama' => 'required|string|max:255',
-            'warna' => 'nullable|string|in:Blue,Green,Purple,Orange,Indigo',
-        ]);
+        try {
+            $validated = $request->validated();
 
-        if ($validator->fails()) {
+            // Prepare data untuk update
+            $updateData = [
+                'slug'       => Str::slug($validated['nama']),
+                'updated_by' => $request->user()->id,
+            ];
+
+            // Merge dengan validated data
+            $category->update(array_merge($validated, $updateData));
+
+            // Reload category untuk mendapatkan data terbaru termasuk slug baru
+            $category->refresh();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Data category berhasil diperbarui.',
+                'data' => $category,
+                'meta' => [
+                    'new_slug' => $category->slug,
+                    'old_slug_updated' => true
+                ]
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Validasi gagal.',
-                'errors' => $validator->errors()
+                'errors' => $e->errors()
             ], 422);
-        }
-
-        try {
-            $user = Auth::user();
-
-            if (!$user) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'User tidak terautentikasi.'
-                ], 403);
-            }
-
-            $category->update([
-                'nama' => $request->nama,
-                'slug' => Str::slug($request->nama, '-'),
-                'warna' => $request->warna ?? $category->warna,
-                'updated_by' => $user->id,
-            ]);
-
-            if ($category) {
-                return new CategoryResource(true, 'Data Category Berhasil Diupdate!', $category);
-            }
-
-            return new CategoryResource(false, 'Data Category Gagal Diupdate!', null);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,

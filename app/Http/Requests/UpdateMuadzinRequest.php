@@ -3,7 +3,6 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class UpdateMuadzinRequest extends FormRequest
 {
@@ -22,40 +21,32 @@ class UpdateMuadzinRequest extends FormRequest
      */
     public function rules(): array
     {
+        // Dapatkan ID muadzin dari route (karena Route Model Binding, ini bisa berupa object)
+        $muadzin = $this->route('muadzin');
+        $muadzinId = is_object($muadzin) ? $muadzin->id : $muadzin;
+
         return [
-            'nama' => 'required|string|max:255',
-            'slug' => [
-                'required',
-                'string',
-                'max:255',
-                Rule::unique('muadzins')->ignore($this->muadzin)
-            ],
-            'no_handphone' => 'required|string|max:20',
-            'alamat' => 'required|string',
-            'tugas' => 'required|string|max:255',
-            'is_active' => 'nullable|boolean',
+            'nama' => 'required|string|max:255|unique:muadzins,nama,' . $muadzinId . ',id,profile_masjid_id,' . $this->user()->getMasjidProfile()->id,
+            'no_handphone' => 'nullable|string|max:20',
+            'alamat' => 'nullable|string',
+            'tugas' => 'nullable|string|max:255',
+            'is_active' => 'boolean',
         ];
     }
 
-    /**
-     * Get custom messages for validator errors.
-     *
-     * @return array
-     */
     public function messages(): array
     {
         return [
-            'nama.required' => 'Nama muadzin wajib diisi.',
+            'nama.required' => 'Nama muadzin harus diisi.',
+            'nama.string' => 'Nama muadzin harus berupa teks.',
             'nama.max' => 'Nama muadzin maksimal 255 karakter.',
-            'slug.required' => 'Slug wajib diisi.',
-            'slug.unique' => 'Slug sudah digunakan.',
-            'slug.max' => 'Slug maksimal 255 karakter.',
-            'no_handphone.required' => 'No handphone wajib diisi.',
+            'nama.unique' => 'Nama muadzin sudah digunakan.',
+            'no_handphone.string' => 'No handphone harus berupa teks.',
             'no_handphone.max' => 'No handphone maksimal 20 karakter.',
-            'alamat.required' => 'Alamat wajib diisi.',
-            'tugas.required' => 'Tugas wajib diisi.',
+            'alamat.string' => 'Alamat harus berupa teks.',
+            'tugas.string' => 'Tugas harus berupa teks.',
             'tugas.max' => 'Tugas maksimal 255 karakter.',
-            'is_active.boolean' => 'Status aktif harus berupa boolean.',
+            'is_active.boolean' => 'Status active harus berupa boolean (true/false).',
         ];
     }
 }

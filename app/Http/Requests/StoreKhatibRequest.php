@@ -3,8 +3,6 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
-use App\Models\User;
-use Illuminate\Contracts\Auth\Authenticatable;
 
 class StoreKhatibRequest extends FormRequest
 {
@@ -13,11 +11,7 @@ class StoreKhatibRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        /** @var User|Authenticatable|null $user */
-        $user = auth()->guard('api')->user();
-
-        // User harus terautentikasi
-        return $user !== null;
+        return true;
     }
 
     /**
@@ -28,12 +22,24 @@ class StoreKhatibRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'nama'            => 'required|string|max:255',
-            'no_handphone'    => 'nullable|string|max:15',
-            'alamat'          => 'nullable|string',
-            'tanggal_khutbah' => 'required|date|after_or_equal:today', // Pastikan tanggal valid
-            'judul_khutbah'   => 'required|string|max:255',
-            'profile_masjid_id' => 'nullable|exists:profile_masjids,id', // Untuk superadmin
+            'nama' => 'required|string|max:255|unique:khatibs,nama,NULL,id,profile_masjid_id,' . $this->user()->getMasjidProfile()->id,
+            'no_handphone' => 'nullable|string|max:15',
+            'alamat' => 'nullable|string',
+            'is_active' => 'boolean',
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'nama.required' => 'Nama khatib harus diisi.',
+            'nama.string' => 'Nama khatib harus berupa teks.',
+            'nama.max' => 'Nama khatib maksimal 255 karakter.',
+            'nama.unique' => 'Nama khatib sudah digunakan.',
+            'no_handphone.string' => 'No handphone harus berupa teks.',
+            'no_handphone.max' => 'No handphone maksimal 15 karakter.',
+            'alamat.string' => 'Alamat harus berupa teks.',
+            'is_active.boolean' => 'Status active harus berupa boolean (true/false).',
         ];
     }
 }

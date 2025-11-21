@@ -3,8 +3,6 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
-use App\Models\User;
-use Illuminate\Contracts\Auth\Authenticatable;
 
 class UpdateKhatibRequest extends FormRequest
 {
@@ -13,11 +11,7 @@ class UpdateKhatibRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        /** @var User|Authenticatable|null $user */
-        $user = auth()->guard('api')->user();
-
-        // Keamanan: user harus login dan punya profil masjid.
-        return $user && method_exists($user, 'getMasjidProfile') && $user->getMasjidProfile();
+        return true;
     }
 
     /**
@@ -27,12 +21,29 @@ class UpdateKhatibRequest extends FormRequest
      */
     public function rules(): array
     {
+        // Dapatkan ID khatib dari route (karena Route Model Binding, ini bisa berupa object)
+        $khatib = $this->route('khatib');
+        $khatibId = is_object($khatib) ? $khatib->id : $khatib;
+
         return [
-            'nama'            => 'sometimes|required|string|max:255',
-            'no_handphone'    => 'sometimes|nullable|string|max:15',
-            'alamat'          => 'sometimes|nullable|string',
-            'tanggal_khutbah' => 'sometimes|required|date',
-            'judul_khutbah'   => 'sometimes|required|string|max:255',
+            'nama' => 'required|string|max:255|unique:khatibs,nama,' . $khatibId . ',id,profile_masjid_id,' . $this->user()->getMasjidProfile()->id,
+            'no_handphone' => 'nullable|string|max:15',
+            'alamat' => 'nullable|string',
+            'is_active' => 'boolean',
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'nama.required' => 'Nama khatib harus diisi.',
+            'nama.string' => 'Nama khatib harus berupa teks.',
+            'nama.max' => 'Nama khatib maksimal 255 karakter.',
+            'nama.unique' => 'Nama khatib sudah digunakan.',
+            'no_handphone.string' => 'No handphone harus berupa teks.',
+            'no_handphone.max' => 'No handphone maksimal 15 karakter.',
+            'alamat.string' => 'Alamat harus berupa teks.',
+            'is_active.boolean' => 'Status active harus berupa boolean (true/false).',
         ];
     }
 }

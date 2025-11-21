@@ -29,7 +29,7 @@ class TakmirController extends Controller implements HasMiddleware
 
     public function index()
     {
-        $takmirs = Takmir::with(['user', 'profileMasjid'])->latest()->paginate(10);
+        $takmirs = Takmir::with(['user', 'profileMasjid'])->latest()->paginate(4);
         return new TakmirResource(true, 'List Data Takmirs', $takmirs);
     }
 
@@ -55,11 +55,12 @@ class TakmirController extends Controller implements HasMiddleware
             ], 400);
         }
 
-        $takmir = DB::transaction(function () use ($request, $validated, $profileMasjid, $adminUser) {
-            // 1. Buat User baru untuk takmir (tanpa email, pakai username saja)
+        $takmir = DB::transaction(function () use ($validated, $profileMasjid, $adminUser) {
+            // 1. Buat User baru untuk takmir
             $newUser = User::create([
                 'name'     => $validated['nama'],
                 'username' => $validated['username'],
+                'email'    => $validated['email'] ?? null,
                 'password' => Hash::make($validated['password']),
             ]);
 
@@ -105,6 +106,7 @@ class TakmirController extends Controller implements HasMiddleware
             // Prepare data untuk update takmir (exclude user fields)
             $takmirUpdateData = [
                 'nama' => $validated['nama'],
+                'slug' => Str::slug($validated['nama']), // Auto-update slug
                 'jabatan' => $validated['jabatan'],
                 'no_handphone' => $validated['no_handphone'] ?? null,
                 'umur' => $validated['umur'] ?? null,

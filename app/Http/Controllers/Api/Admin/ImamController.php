@@ -24,30 +24,10 @@ class ImamController extends Controller implements HasMiddleware
         ];
     }
 
-    public function index(Request $request)
+    public function index()
     {
-        $user = $request->user();
-        $profileMasjidId = $this->getProfileMasjidId($user, $request);
+        $query = Imam::with(['profileMasjid', 'createdBy', 'updatedBy']);
 
-        if (!$profileMasjidId) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Profile masjid tidak ditemukan.'
-            ], 400);
-        }
-
-        $query = Imam::with(['profileMasjid', 'createdBy', 'updatedBy'])
-            ->where('profile_masjid_id', $profileMasjidId);
-
-        // Filter berdasarkan nama
-        if ($request->filled('search')) {
-            $query->where('nama', 'like', '%' . $request->search . '%');
-        }
-
-        // Filter berdasarkan status aktif
-        if ($request->filled('is_active')) {
-            $query->where('is_active', $request->boolean('is_active'));
-        }
 
         $imams = $query->latest()->paginate(10);
 

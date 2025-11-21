@@ -3,6 +3,8 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\Auth\SignUpController;
 use App\Http\Controllers\Api\Auth\LoginController;
+use App\Http\Controllers\Api\Auth\RefreshTokenController;
+use App\Http\Controllers\Api\DebugController;
 use App\Http\Controllers\Api\Admin\TakmirController;
 use App\Http\Controllers\Api\Superadmin\DashboardController;
 use App\Http\Controllers\Api\Superadmin\PermissionController;
@@ -34,29 +36,28 @@ Route::get('/test', function () {
 // Route untuk sign up (register)
 Route::post('/signup', [SignUpController::class, '__invoke']);
 
-// route login
-Route::post('/login', [LoginController::class, 'index']);
+// route login dengan rate limiting (5 attempts per minute)
+Route::post('/login', [LoginController::class, 'index'])->middleware('throttle:5,1');
+
+// refresh token endpoints (dengan rate limiting)
+Route::post('/refresh', [RefreshTokenController::class, 'refresh'])->middleware('throttle:10,1');
 
 // group route with middleware "auth"
 Route::group(['middleware' => 'auth:api'], function () {
 
-    // logout
+    // logout (hapus semua refresh tokens - forced logout dari semua devices)
     Route::post('/logout', [LoginController::class, 'logout']);
+
+    // revoke current refresh token (logout dari device saat ini saja)
+    Route::post('/revoke-token', [RefreshTokenController::class, 'revoke']);
+
+
 
     // Grup rute untuk Admin (Hanya admin dan takmir)
     Route::prefix('admin')->as('admin.')->middleware('custom.role:admin,takmir')->group(function () {
 
         // Categories API - specific routes HARUS sebelum apiResource
-        Route::get('/categories/all', [AdminCategoryController::class, 'all']);
-        Route::apiResource('/categories', AdminCategoryController::class)->names([
-            'index' => 'admin.categories.index',
-            'store' => 'admin.categories.store',
-            'show' => 'admin.categories.show',
-            'update' => 'admin.categories.update',
-            'destroy' => 'admin.categories.destroy',
-        ]);
-        Route::get('/categories/slug/{slug}', [AdminCategoryController::class, 'showBySlug']);
-
+        Route::apiResource('/categories', AdminCategoryController::class);
         // Transaksi Keuangan API - specific routes HARUS sebelum apiResource
         Route::get('/transactions/dashboard', [TransaksiKeuanganController::class, 'dashboard']);
         Route::get('/transactions/chart-data', [TransaksiKeuanganController::class, 'chartData']);
@@ -100,14 +101,6 @@ Route::group(['middleware' => 'auth:api'], function () {
 
         // Jadwal Khutbah API
         Route::apiResource('/jadwal-khutbahs', JadwalKhutbahController::class);
-
-        // Additional routes for specific functionalities
-        // Dashboard untuk admin/takmir (jika diperlukan)
-        // Route::get('/dashboard', [AdminDashboardController::class, 'index']);
-
-        // Reports routes (jika diperlukan)
-        // Route::get('/reports/financial', [TransaksiKeuanganController::class, 'generateReport']);
-        // Route::get('/reports/attendance', [JamaahController::class, 'attendanceReport']);
     });
 });
 

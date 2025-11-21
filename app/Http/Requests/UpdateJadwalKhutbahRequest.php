@@ -22,7 +22,7 @@ class UpdateJadwalKhutbahRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'tanggal' => 'required|date',
+            'tanggal' => 'required|date|after_or_equal:today|unique:|unique:jadwal_khutbahs,tanggal,NULL,id,profile_masjid_id,' . $this->user()->getMasjidProfile()->id,
             'hari' => 'nullable|string|max:20',
             'imam_id' => 'nullable|exists:imams,id',
             'khatib_id' => 'nullable|exists:khatibs,id',

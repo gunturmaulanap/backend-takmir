@@ -29,6 +29,8 @@ class KhatibController extends Controller implements HasMiddleware
      */
     public function index()
     {
+        $query = Khatib::with(['profileMasjid', 'createdBy', 'updatedBy']);
+
         $khatibs = Khatib::latest()->paginate(10);
         return new KhatibResource(true, 'Daftar Data Khatib', $khatibs);
     }
