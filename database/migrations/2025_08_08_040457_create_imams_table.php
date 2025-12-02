@@ -20,7 +20,6 @@ return new class extends Migration
             $table->unique(['slug', 'profile_masjid_id']);
             $table->string('no_handphone');
             $table->text('alamat');
-            $table->string('tugas');
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();

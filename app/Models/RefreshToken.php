@@ -12,16 +12,18 @@ class RefreshToken extends Model
 
     protected $fillable = [
         'user_id',
-        'token',
+        'refresh_token',
         'expires_at',
         'revoked',
         'device_info',
         'ip_address',
+        'last_used_at',
     ];
 
     protected $casts = [
         'expires_at' => 'datetime',
         'revoked' => 'boolean',
+        'last_used_at' => 'datetime',
     ];
 
     /**

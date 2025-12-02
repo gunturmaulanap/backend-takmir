@@ -4,6 +4,10 @@ namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\URL;
+use App\Models\Event;
+use App\Models\JadwalKhutbah;
+use App\Observers\EventObserver;
+use App\Observers\JadwalKhutbahObserver;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -26,5 +30,9 @@ class AppServiceProvider extends ServiceProvider
         if (config('app.env') !== 'local') {
             URL::forceScheme('https');
         }
+
+        // Register observers
+        Event::observe(EventObserver::class);
+        JadwalKhutbah::observe(JadwalKhutbahObserver::class);
     }
 }

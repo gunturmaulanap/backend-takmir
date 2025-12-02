@@ -32,12 +32,22 @@ class JadwalKhutbahController extends Controller implements HasMiddleware
     {
         $query = JadwalKhutbah::with(['profileMasjid', 'createdBy', 'updatedBy', 'imam', 'khatib', 'muadzin']);
 
-
         $jadwalKhutbah = $query->orderBy('tanggal', 'desc')->paginate(15);
 
-        return response()->json(
-            JadwalKhutbahResource::customResponse(true, 'List Data Jadwal Khutbah', JadwalKhutbahResource::collection($jadwalKhutbah))
-        );
+        // Return consistent pagination response
+        return response()->json([
+            'success' => true,
+            'message' => 'List Data Jadwal Khutbah',
+            'data' => $jadwalKhutbah->items(),
+            'meta' => [
+                'current_page' => $jadwalKhutbah->currentPage(),
+                'from' => $jadwalKhutbah->firstItem(),
+                'last_page' => $jadwalKhutbah->lastPage(),
+                'per_page' => $jadwalKhutbah->perPage(),
+                'to' => $jadwalKhutbah->lastItem(),
+                'total' => $jadwalKhutbah->total(),
+            ]
+        ]);
     }
 
     public function store(StoreJadwalKhutbahRequest $request)
@@ -81,16 +91,25 @@ class JadwalKhutbahController extends Controller implements HasMiddleware
             ...$validated
         ]);
 
-        return response()->json(
-            JadwalKhutbahResource::customResponse(true, 'Data jadwal khutbah berhasil disimpan.', new JadwalKhutbahResource($jadwalKhutbah->load(['profileMasjid', 'imam', 'khatib', 'muadzin', 'createdBy', 'updatedBy'])))
-        );
+        // Load relationships untuk response
+        $jadwalKhutbah->load(['profileMasjid', 'imam', 'khatib', 'muadzin', 'createdBy', 'updatedBy']);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Data jadwal khutbah berhasil disimpan.',
+            'data' => $jadwalKhutbah
+        ], 201);
     }
 
     public function show(JadwalKhutbah $jadwalKhutbah)
     {
-        return response()->json(
-            JadwalKhutbahResource::customResponse(true, 'Detail data jadwal khutbah berhasil dimuat.', new JadwalKhutbahResource($jadwalKhutbah->load(['profileMasjid', 'imam', 'khatib', 'muadzin', 'createdBy', 'updatedBy'])))
-        );
+        $jadwalKhutbah->load(['profileMasjid', 'imam', 'khatib', 'muadzin', 'createdBy', 'updatedBy']);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Detail data jadwal khutbah berhasil dimuat.',
+            'data' => $jadwalKhutbah
+        ]);
     }
 
     public function update(UpdateJadwalKhutbahRequest $request, JadwalKhutbah $jadwalKhutbah)
@@ -125,18 +144,25 @@ class JadwalKhutbahController extends Controller implements HasMiddleware
             ...$validated
         ]);
 
-        return response()->json(
-            JadwalKhutbahResource::customResponse(true, 'Data jadwal khutbah berhasil diupdate.', new JadwalKhutbahResource($jadwalKhutbah->load(['profileMasjid', 'imam', 'khatib', 'muadzin', 'createdBy', 'updatedBy'])))
-        );
+        // Load relationships untuk response
+        $jadwalKhutbah->load(['profileMasjid', 'imam', 'khatib', 'muadzin', 'createdBy', 'updatedBy']);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Data jadwal khutbah berhasil diupdate.',
+            'data' => $jadwalKhutbah
+        ]);
     }
 
     public function destroy(JadwalKhutbah $jadwalKhutbah)
     {
         $jadwalKhutbah->delete();
 
-        return response()->json(
-            JadwalKhutbahResource::customResponse(true, 'Data jadwal khutbah berhasil dihapus.', null)
-        );
+        return response()->json([
+            'success' => true,
+            'message' => 'Data jadwal khutbah berhasil dihapus.',
+            'data' => null
+        ]);
     }
 
     /**

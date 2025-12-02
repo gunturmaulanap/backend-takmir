@@ -23,12 +23,11 @@ class StoreJadwalKhutbahRequest extends FormRequest
     {
         return [
             'tanggal' => 'required|date|after_or_equal:today|unique:jadwal_khutbahs,tanggal,NULL,id,profile_masjid_id,' . $this->user()->getMasjidProfile()->id,
-            'hari' => 'nullable|string|max:20',
-            'imam_id' => 'nullable|exists:imams,id',
-            'khatib_id' => 'nullable|exists:khatibs,id',
-            'muadzin_id' => 'nullable|exists:muadzins,id',
-            'tema_khutbah' => 'nullable|string',
-            'profile_masjid_id' => 'nullable|exists:profile_masjids,id', // Untuk superadmin
+            'imam_id' => 'required|exists:imams,id',
+            'khatib_id' => 'required|exists:khatibs,id',
+            'muadzin_id' => 'required|exists:muadzins,id',
+            'tema_khutbah' => 'required|string',
+            'profile_masjid_id' => 'required|exists:profile_masjids,id', // Untuk superadmin
         ];
     }
 
@@ -44,11 +43,10 @@ class StoreJadwalKhutbahRequest extends FormRequest
             'tanggal.unique' => 'Jadwal khutbah untuk tanggal ini sudah ada.',
             'tanggal.date' => 'Format tanggal tidak valid.',
             'tanggal.after_or_equal' => 'Tanggal khutbah tidak boleh di masa lalu.',
-            'hari.max' => 'Hari maksimal 20 karakter.',
-            'imam_id.exists' => 'Imam tidak ditemukan.',
-            'khatib_id.exists' => 'Khatib tidak ditemukan.',
-            'muadzin_id.exists' => 'Muadzin tidak ditemukan.',
-            'profile_masjid_id.exists' => 'Profile masjid tidak ditemukan.',
+            'imam_id.required' => 'Imam harus dipilih.',
+            'khatib_id.required' => 'Khatib harus dipilih.',
+            'muadzin_id.required' => 'Muadzin harus dipilih.',
+            'profile_masjid_id.required' => 'Profile masjid harus dipilih.',
         ];
     }
 }

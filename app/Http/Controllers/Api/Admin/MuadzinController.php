@@ -29,7 +29,7 @@ class MuadzinController extends Controller implements HasMiddleware
         $query = Muadzin::with(['profileMasjid', 'createdBy', 'updatedBy']);
 
 
-        $muadzins = $query->latest()->paginate(10);
+        $muadzins = $query->latest()->paginate(4);
 
         return response()->json(
             MuadzinResource::customResponse(true, 'List Data Muadzin', MuadzinResource::collection($muadzins))

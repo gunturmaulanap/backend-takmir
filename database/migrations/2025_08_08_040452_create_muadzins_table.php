@@ -20,7 +20,6 @@ return new class extends Migration
             $table->string('no_handphone');
             $table->boolean('is_active')->default(true);
             $table->text('alamat');
-            $table->string('tugas');
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();

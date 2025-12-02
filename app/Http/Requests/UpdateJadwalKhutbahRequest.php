@@ -22,12 +22,11 @@ class UpdateJadwalKhutbahRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'tanggal' => 'required|date|after_or_equal:today|unique:|unique:jadwal_khutbahs,tanggal,NULL,id,profile_masjid_id,' . $this->user()->getMasjidProfile()->id,
-            'hari' => 'nullable|string|max:20',
-            'imam_id' => 'nullable|exists:imams,id',
-            'khatib_id' => 'nullable|exists:khatibs,id',
-            'muadzin_id' => 'nullable|exists:muadzins,id',
-            'tema_khutbah' => 'nullable|string',
+            'tanggal' => 'required|date|after_or_equal:today|unique:jadwal_khutbahs,tanggal,NULL,id,profile_masjid_id,' . $this->user()->getMasjidProfile()->id,
+            'imam_id' => 'required|exists:imams,id',
+            'khatib_id' => 'required|exists:khatibs,id',
+            'muadzin_id' => 'required|exists:muadzins,id',
+            'tema_khutbah' => 'required|string',
         ];
     }
 
@@ -41,10 +40,9 @@ class UpdateJadwalKhutbahRequest extends FormRequest
         return [
             'tanggal.required' => 'Tanggal khutbah wajib diisi.',
             'tanggal.date' => 'Format tanggal tidak valid.',
-            'hari.max' => 'Hari maksimal 20 karakter.',
-            'imam_id.exists' => 'Imam tidak ditemukan.',
-            'khatib_id.exists' => 'Khatib tidak ditemukan.',
-            'muadzin_id.exists' => 'Muadzin tidak ditemukan.',
+            'imam_id.required' => 'Imam harus dipilih.',
+            'khatib_id.required' => 'Khatib harus dipilih.',
+            'muadzin_id.required' => 'Muadzin harus dipilih.',
         ];
     }
 }

@@ -7,6 +7,7 @@ use App\Models\RefreshToken;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use Carbon\Carbon;
@@ -28,7 +29,7 @@ class RefreshTokenController extends Controller
     {
         return RefreshToken::create([
             'user_id' => $user->id,
-            'token' => $this->generateRefreshToken(),
+            'refresh_token' => $this->generateRefreshToken(),
             'expires_at' => Carbon::now()->addDays(7), // 7 days expiry
             'device_info' => $request->header('User-Agent'),
             'ip_address' => $request->ip(),
@@ -52,7 +53,7 @@ class RefreshTokenController extends Controller
         }
 
         try {
-            $refreshToken = RefreshToken::where('token', $request->refresh_token)
+            $refreshToken = RefreshToken::where('refresh_token', $request->refresh_token)
                 ->where('revoked', false)
                 ->with('user')
                 ->first();
@@ -83,21 +84,34 @@ class RefreshTokenController extends Controller
                 ], 403);
             }
 
-            // Generate new access token
-            $newAccessToken = JWTAuth::fromUser($user);
+            // Generate new access token with unique identifier
+            // Add custom claims to ensure uniqueness
+            $customClaims = [
+                'jti' => uniqid() . '_' . time() . '_' . mt_rand(), // Unique identifier
+                'type' => 'access',
+                'refresh_id' => $refreshToken->id, // Link to refresh token
+                'refresh_time' => time(), // Track when refresh happened
+            ];
 
-            // Delete old refresh token and create new one
-            $refreshToken->delete();
-            $newRefreshToken = $this->createRefreshToken($user, $request);
+            $newAccessToken = JWTAuth::fromUser($user, $customClaims);
+
+
+
+            // IMPORTANT: Keep the SAME refresh token
+            // Refresh token should NOT change unless it's expired or user logs out
+            // Only update last_used timestamp for security
+            $refreshToken->update([
+                'last_used_at' => Carbon::now(),
+                'ip_address' => $request->ip(), // Update IP for security
+            ]);
 
             return response()->json([
                 'success' => true,
                 'access_token' => $newAccessToken,
-                'refresh_token' => $newRefreshToken->token,
+                'refresh_token' => $refreshToken->refresh_token, // SAME refresh token
                 'expires_in' => config('jwt.ttl') * 60, // Convert minutes to seconds
                 'token_type' => 'Bearer'
             ]);
-
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -124,7 +138,7 @@ class RefreshTokenController extends Controller
         }
 
         try {
-            $refreshToken = RefreshToken::where('token', $request->refresh_token)
+            $refreshToken = RefreshToken::where('refresh_token', $request->refresh_token)
                 ->where('revoked', false)
                 ->first();
 
@@ -137,7 +151,6 @@ class RefreshTokenController extends Controller
                 'success' => true,
                 'message' => 'Refresh token deleted successfully'
             ]);
-
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,

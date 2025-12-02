@@ -15,7 +15,6 @@ class JadwalKhutbah extends Model
 
     protected $fillable = [
         'tanggal',
-        'hari',
         'imam_id',
         'khatib_id',
         'muadzin_id',

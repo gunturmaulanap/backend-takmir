@@ -16,7 +16,6 @@ class Muadzin extends Model
         'slug',
         'no_handphone',
         'alamat',
-        'tugas',
         'is_active',
         'created_by',
         'updated_by',

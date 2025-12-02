@@ -34,14 +34,7 @@ class MuadzinTableSeeder extends Seeder
             'Rudi Hartono'
         ];
 
-        $tugasMuadzin = [
-            'Adzan Subuh',
-            'Adzan Dhuhur',
-            'Adzan Ashar',
-            'Adzan Maghrib',
-            'Adzan Isya',
-            'Adzan Jumat'
-        ];
+
 
         $namaIndex = 0;
 
@@ -60,7 +53,6 @@ class MuadzinTableSeeder extends Seeder
                     'slug' => Str::slug($nama) . '-' . Str::random(3),
                     'no_handphone' => '0814' . rand(10000000, 99999999),
                     'alamat' => 'Jl. ' . explode(' ', $nama)[0] . ' No. ' . rand(1, 50) . ', Yogyakarta',
-                    'tugas' => $tugasMuadzin[array_rand($tugasMuadzin)],
                     'created_by' => $userId,
                     'updated_by' => $userId,
                 ]);

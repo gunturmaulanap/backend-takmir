@@ -4,7 +4,6 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\Auth\SignUpController;
 use App\Http\Controllers\Api\Auth\LoginController;
 use App\Http\Controllers\Api\Auth\RefreshTokenController;
-use App\Http\Controllers\Api\DebugController;
 use App\Http\Controllers\Api\Admin\TakmirController;
 use App\Http\Controllers\Api\Superadmin\DashboardController;
 use App\Http\Controllers\Api\Superadmin\PermissionController;
@@ -12,7 +11,6 @@ use App\Http\Controllers\Api\Superadmin\RoleController;
 use App\Http\Controllers\Api\Superadmin\UserController;
 use App\Http\Controllers\Api\Superadmin\ProfileMasjidController;
 use App\Http\Controllers\Api\Superadmin\AdminController;
-use App\Http\Controllers\Api\Superadmin\CategoryController as SuperadminCategoryController;
 use App\Http\Controllers\Api\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controllers\Api\Admin\JamaahController;
 use App\Http\Controllers\Api\Admin\EventController;
@@ -36,11 +34,13 @@ Route::get('/test', function () {
 // Route untuk sign up (register)
 Route::post('/signup', [SignUpController::class, '__invoke']);
 
-// route login dengan rate limiting (5 attempts per minute)
-Route::post('/login', [LoginController::class, 'index'])->middleware('throttle:5,1');
+// route login dengan rate limiting (20 attempts per minute)
+// Increased for development and proactive refresh scenarios
+Route::post('/login', [LoginController::class, 'index'])->middleware('throttle:20,1');
 
-// refresh token endpoints (dengan rate limiting)
-Route::post('/refresh', [RefreshTokenController::class, 'refresh'])->middleware('throttle:10,1');
+// refresh token endpoints (dengan rate limiting) - tetap di luar auth untuk refresh expired token
+// Increased limit for proactive refresh scenarios
+Route::post('/refresh', [RefreshTokenController::class, 'refresh'])->middleware('throttle:60,1');
 
 // group route with middleware "auth"
 Route::group(['middleware' => 'auth:api'], function () {
@@ -85,7 +85,6 @@ Route::group(['middleware' => 'auth:api'], function () {
 
         // Events API
         Route::apiResource('/events', EventController::class);
-        Route::get('/events/slug/{slug}', [EventController::class, 'showBySlug']); // Keep old for compatibility
 
         // Event Views (Kalender) API
         Route::get('/event-views', [EventViewController::class, 'index']);

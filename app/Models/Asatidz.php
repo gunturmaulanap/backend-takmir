@@ -19,9 +19,7 @@ class Asatidz extends Model
         'profile_masjid_id',
         'no_handphone',
         'alamat',
-        'tugas',
         'jenis_kelamin',
-        'image',
         'created_by',
         'updated_by',
     ];

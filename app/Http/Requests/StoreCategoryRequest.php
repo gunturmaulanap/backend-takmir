@@ -33,7 +33,7 @@ class StoreCategoryRequest extends FormRequest
             'nama.required' => 'Nama kategori harus diisi.',
             'nama.string' => 'Nama kategori harus berupa teks.',
             'nama.max' => 'Nama kategori maksimal 100 karakter.',
-            'nama.unique' => 'Nama kategori sudah digunakaaaaan.',
+            'nama.unique' => 'Nama kategori sudah digunakan.',
             'warna.string' => 'Warna kategori harus berupa teks.',
             'warna.in' => 'Warna kategori harus salah satu dari: Blue, Green, Purple, Orange, Indigo.',
         ];

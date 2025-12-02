@@ -29,7 +29,7 @@ class ImamController extends Controller implements HasMiddleware
         $query = Imam::with(['profileMasjid', 'createdBy', 'updatedBy']);
 
 
-        $imams = $query->latest()->paginate(10);
+        $imams = $query->latest()->paginate(4);
 
         return response()->json(
             ImamResource::customResponse(true, 'List Data Imam', ImamResource::collection($imams))

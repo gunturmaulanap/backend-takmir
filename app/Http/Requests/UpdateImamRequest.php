@@ -21,15 +21,10 @@ class UpdateImamRequest extends FormRequest
      */
     public function rules(): array
     {
-        // Dapatkan ID imam dari route (karena Route Model Binding, ini bisa berupa object)
-        $imam = $this->route('imam');
-        $imamId = is_object($imam) ? $imam->id : $imam;
-
         return [
-            'nama' => 'required|string|max:255|unique:imams,nama,' . $imamId . ',id,profile_masjid_id,' . $this->user()->getMasjidProfile()->id,
+            'nama' => 'required|string|max:255|unique:imams,nama,NULL,id,profile_masjid_id,' . $this->user()->getMasjidProfile()->id,
             'no_handphone' => 'nullable|string|max:20',
             'alamat' => 'nullable|string',
-            'tugas' => 'nullable|string|max:255',
             'is_active' => 'boolean',
         ];
     }
@@ -44,8 +39,6 @@ class UpdateImamRequest extends FormRequest
             'no_handphone.string' => 'No handphone harus berupa teks.',
             'no_handphone.max' => 'No handphone maksimal 20 karakter.',
             'alamat.string' => 'Alamat harus berupa teks.',
-            'tugas.string' => 'Tugas harus berupa teks.',
-            'tugas.max' => 'Tugas maksimal 255 karakter.',
             'is_active.boolean' => 'Status active harus berupa boolean (true/false).',
         ];
     }

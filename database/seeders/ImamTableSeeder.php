@@ -34,13 +34,7 @@ class ImamTableSeeder extends Seeder
             'Ustadz Rudi Hartono'
         ];
 
-        $tugasImam = [
-            'Imam Sholat Fardhu',
-            'Imam Sholat Jumat',
-            'Imam Sholat Tarawih',
-            'Imam Sholat Ied',
-            'Imam Sholat Jenazah'
-        ];
+
 
         $namaIndex = 0;
 
@@ -59,7 +53,6 @@ class ImamTableSeeder extends Seeder
                     'slug' => Str::slug($nama) . '-' . Str::random(3),
                     'no_handphone' => '0812' . rand(10000000, 99999999),
                     'alamat' => 'Jl. ' . explode(' ', $nama)[1] . ' No. ' . rand(1, 50) . ', Yogyakarta',
-                    'tugas' => $tugasImam[array_rand($tugasImam)],
                     'created_by' => $userId,
                     'updated_by' => $userId,
                 ]);

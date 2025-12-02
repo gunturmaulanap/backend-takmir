@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('refresh_tokens', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->string('token', 255)->unique();
+            $table->string('refresh_token', 255)->unique();
             $table->timestamp('expires_at');
             $table->string('device_info')->nullable();
             $table->string('ip_address', 45)->nullable();
@@ -22,7 +22,7 @@ return new class extends Migration
             $table->timestamps();
 
             // Index untuk token lookup (saat refresh)
-            $table->index('token', 'idx_refresh_token');
+            $table->index('refresh_token', 'idx_refresh_token');
 
             // Index untuk user lookup (saat limit tokens & cleanup)
             $table->index(['user_id', 'revoked'], 'idx_user_revoked');

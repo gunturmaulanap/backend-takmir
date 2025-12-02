@@ -20,9 +20,7 @@ return new class extends Migration
             $table->boolean('is_active')->default(true);
             $table->string('no_handphone');
             $table->text('alamat');
-            $table->string('tugas');
             $table->enum('asatidz', ['ustadz', 'ustadzah']);
-            $table->string('image')->nullable();
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();

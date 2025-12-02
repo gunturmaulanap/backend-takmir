@@ -106,7 +106,7 @@ class LoginController extends Controller
             // Generate refresh token
             $refreshToken = RefreshToken::create([
                 'user_id' => $user->id,
-                'token' => hash('sha256', uniqid() . time() . $user->id),
+                'refresh_token' => hash('sha256', uniqid() . time() . $user->id),
                 'expires_at' => Carbon::now()->addDays(7),
                 'device_info' => $request->header('User-Agent'),
                 'ip_address' => $request->ip(),
@@ -118,7 +118,7 @@ class LoginController extends Controller
                 'profile_masjid' => $masjidProfile,
                 'permissions'    => $permissions,
                 'access_token'   => $token,
-                'refresh_token'  => $refreshToken->token,
+                'refresh_token'  => $refreshToken->refresh_token,
                 'expires_in'     => config('jwt.ttl') * 60, // Convert minutes to seconds
                 'token_type'     => 'Bearer'
             ], 200);
