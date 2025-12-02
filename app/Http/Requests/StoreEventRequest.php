@@ -24,7 +24,7 @@ class StoreEventRequest extends FormRequest
     {
         return [
             'nama' => 'required|string|max:255|unique:events,nama,NULL,id,profile_masjid_id,' . $this->user()->getMasjidProfile()->id,
-            'deskripsi'       => 'required|string',
+            'deskripsi'       => 'string',
             'image'           => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
             'tanggal_event'   => 'required|date',
             'waktu_event'     => 'required|date_format:H:i',
@@ -40,7 +40,6 @@ class StoreEventRequest extends FormRequest
             'nama.string' => 'Nama event harus berupa teks.',
             'nama.max' => 'Nama event maksimal 255 karakter.',
             'nama.unique' => 'Nama event sudah digunakan.',
-            'deskripsi.required' => 'Deskripsi event harus diisi.',
             'deskripsi.string' => 'Deskripsi event harus berupa teks.',
             'image.required' => 'Gambar event harus diupload.',
             'image.image' => 'File yang diupload harus berupa gambar.',
