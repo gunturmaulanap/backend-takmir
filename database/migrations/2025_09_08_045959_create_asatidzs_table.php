@@ -13,17 +13,22 @@ return new class extends Migration
     {
         Schema::create('asatidzs', function (Blueprint $table) {
             $table->id();
-            $table->string('nama');
             $table->foreignId('profile_masjid_id')->constrained('profile_masjids')->cascadeOnDelete();
+            $table->string('nama');
             $table->string('slug');
             $table->unique(['slug', 'profile_masjid_id']);
-            $table->boolean('is_active')->default(true);
-            $table->string('no_handphone');
-            $table->text('alamat');
-            $table->enum('asatidz', ['ustadz', 'ustadzah']);
+            $table->string('no_handphone')->nullable();
+            $table->text('alamat')->nullable();
+            $table->integer('umur')->nullable();
+            $table->enum('jenis_kelamin', ['Laki-laki', 'Perempuan'])->nullable();
+            $table->string('keahlian')->nullable(); // Keahlian mengajar (Tajwid, Fiqih, dll)
+            $table->text('keterangan')->nullable();
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
+
+            $table->index('profile_masjid_id');
+            $table->index('slug');
         });
     }
 

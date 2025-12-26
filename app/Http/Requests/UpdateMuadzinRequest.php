@@ -21,8 +21,17 @@ class UpdateMuadzinRequest extends FormRequest
      */
     public function rules(): array
     {
+        $muadzin = $this->route('muadzin'); // Mendapatkan muadzin dari route
+        $profileMasjidId = $this->user()->getMasjidProfile()->id;
+
         return [
-            'nama' => 'required|string|max:255|unique:muadzins,nama,NULL,id,profile_masjid_id,' . $this->user()->getMasjidProfile()->id,
+            'nama' => [
+                'required',
+                'string',
+                'max:255',
+                // Unique validation, tapi exclude record yang sedang diupdate
+                "unique:muadzins,nama,{$muadzin->id},id,profile_masjid_id,{$profileMasjidId}"
+            ],
             'no_handphone' => 'nullable|string|max:20',
             'alamat' => 'nullable|string',
             'is_active' => 'boolean',

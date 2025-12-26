@@ -15,6 +15,19 @@ class UpdateJamaahRequest extends FormRequest
     }
 
     /**
+     * Prepare inputs for validation.
+     */
+    protected function prepareForValidation(): void
+    {
+        // Convert aktivitas_jamaah array to comma-separated string
+        if ($this->has('aktivitas_jamaah') && is_array($this->input('aktivitas_jamaah'))) {
+            $this->merge([
+                'aktivitas_jamaah' => implode(', ', array_filter($this->input('aktivitas_jamaah'))),
+            ]);
+        }
+    }
+
+    /**
      * Get the validation rules that apply to the request.
      *
      * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
@@ -31,7 +44,7 @@ class UpdateJamaahRequest extends FormRequest
             'alamat' => 'nullable|string',
             'umur' => 'nullable|integer|min:1|max:150',
             'jenis_kelamin' => 'nullable|string|in:Laki-laki,Perempuan',
-            'aktivitas_jamaah' => 'nullable|string|max:255',
+            'aktivitas_jamaah' => 'nullable|array|string|max:255',
         ];
     }
 

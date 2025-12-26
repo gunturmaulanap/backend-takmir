@@ -17,32 +17,79 @@ class JamaahTableSeeder extends Seeder
         $masjids = ProfileMasjid::all();
 
         $namaTemplates = [
-            'Ahmad Santoso', 'Budi Hartono', 'Citra Dewi', 'Dina Lestari', 'Eko Prasetyo',
-            'Fajar Kurniawan', 'Gita Cahyani', 'Hasan Basri', 'Indra Setiawan', 'Joko Susilo',
-            'Siti Aminah', 'Rudi Haryanto', 'Wulan Sari', 'Bayu Firmansyah', 'Nina Oktaviani',
-            'Andi Saputra', 'Rina Agustin', 'Irfan Maulana', 'Dewi Susanti', 'Lukman Hakim',
-            'Kartika Dwi', 'Mochamad Rizki', 'Eka Fitriani', 'Fadil Pratama', 'Yulia Indah',
-            'Reza Pahlevi', 'Anisa Rahma', 'Pramudya Agung', 'Dyah Ayu', 'Fikri Haikal',
-            'Dendi Wijaya', 'Ratna Komala', 'Dimas Prasetya', 'Shinta Puspita', 'Yoga Pratama'
+            'Ahmad Santoso',
+            'Budi Hartono',
+            'Citra Dewi',
+            'Dina Lestari',
+            'Eko Prasetyo',
+            'Fajar Kurniawan',
+            'Gita Cahyani',
+            'Hasan Basri',
+            'Indra Setiawan',
+            'Joko Susilo',
+            'Siti Aminah',
+            'Rudi Haryanto',
+            'Wulan Sari',
+            'Bayu Firmansyah',
+            'Nina Oktaviani',
+            'Andi Saputra',
+            'Rina Agustin',
+            'Irfan Maulana',
+            'Dewi Susanti',
+            'Lukman Hakim',
+            'Kartika Dwi',
+            'Mochamad Rizki',
+            'Eka Fitriani',
+            'Fadil Pratama',
+            'Yulia Indah',
+            'Reza Pahlevi',
+            'Anisa Rahma',
+            'Pramudya Agung',
+            'Dyah Ayu',
+            'Fikri Haikal',
+            'Dendi Wijaya',
+            'Ratna Komala',
+            'Dimas Prasetya',
+            'Shinta Puspita',
+            'Yoga Pratama'
         ];
 
         $aktivitasJamaah = [
-            'Sholat Jumat', 'TPQ', 'Pengajian Rutin', 'Kegiatan Sosial',
-            'Kegiatan Keagamaan', 'Relawan Masjid'
+            "Kajian Rutin",
+            "TPQ",
+            "Kajian Senin Kamis",
+            "Kajian Sabtu",
+            "Tabligh Akhbar",
+            "Shalat Jamaah",
+            "Sukarelawan",
+            "Kajian Minggu",
         ];
 
         $femaleNames = [
-            'Citra Dewi', 'Dina Lestari', 'Gita Cahyani', 'Siti Aminah', 'Wulan Sari',
-            'Nina Oktaviani', 'Rina Agustin', 'Dewi Susanti', 'Kartika Dwi', 'Eka Fitriani',
-            'Yulia Indah', 'Anisa Rahma', 'Dyah Ayu', 'Ratna Komala', 'Shinta Puspita'
+            'Citra Dewi',
+            'Dina Lestari',
+            'Gita Cahyani',
+            'Siti Aminah',
+            'Wulan Sari',
+            'Nina Oktaviani',
+            'Rina Agustin',
+            'Dewi Susanti',
+            'Kartika Dwi',
+            'Eka Fitriani',
+            'Yulia Indah',
+            'Anisa Rahma',
+            'Dyah Ayu',
+            'Ratna Komala',
+            'Shinta Puspita'
         ];
 
         foreach ($masjids as $masjid) {
             $userId = $masjid->user_id;
             $usedNames = []; // Track nama yang sudah dipakai untuk masjid ini
 
-            // Buat 5 data jamaah untuk setiap masjid
-            for ($i = 0; $i < 5; $i++) {
+            // Buat 10 data jamaah untuk setiap masjid
+            // 7 pertama memiliki aktivitas TPQ
+            for ($i = 0; $i < 10; $i++) {
                 // Pilih nama yang belum dipakai di masjid ini
                 $availableNames = array_diff($namaTemplates, $usedNames);
 
@@ -58,6 +105,32 @@ class JamaahTableSeeder extends Seeder
                 $gender = in_array($nama, $femaleNames) ? 'Perempuan' : 'Laki-laki';
                 $umur = rand(15, 60);
 
+                // 7 jamaah pertama harus memiliki TPQ
+                if ($i < 7) {
+                    // Pastikan TPQ selalu terpilih
+                    $aktivitasWithoutTPQ = array_filter($aktivitasJamaah, function($act) {
+                        return $act !== 'TPQ';
+                    });
+
+                    // Pilih 1-3 aktivitas tambahan selain TPQ
+                    $numAdditional = rand(1, 3);
+                    shuffle($aktivitasWithoutTPQ);
+                    $selectedAktivitas = array_slice($aktivitasWithoutTPQ, 0, $numAdditional);
+                    array_unshift($selectedAktivitas, 'TPQ'); // TPQ selalu ada
+                    $aktivitasString = implode(', ', $selectedAktivitas);
+                } else {
+                    // 3 jamaah terakhir TANPA TPQ
+                    $aktivitasWithoutTPQ = array_filter($aktivitasJamaah, function($act) {
+                        return $act !== 'TPQ';
+                    });
+
+                    // Pilih 2-4 aktivitas (tanpa TPQ)
+                    $numAktivitas = rand(2, 4);
+                    shuffle($aktivitasWithoutTPQ);
+                    $selectedAktivitas = array_slice($aktivitasWithoutTPQ, 0, $numAktivitas);
+                    $aktivitasString = implode(', ', $selectedAktivitas);
+                }
+
                 Jamaah::create([
                     'profile_masjid_id' => $masjid->id,
                     'nama' => $nama,
@@ -66,7 +139,7 @@ class JamaahTableSeeder extends Seeder
                     'alamat' => $this->generateRandomAddress(),
                     'umur' => $umur,
                     'jenis_kelamin' => $gender,
-                    'aktivitas_jamaah' => $aktivitasJamaah[array_rand($aktivitasJamaah)],
+                    'aktivitas_jamaah' => $aktivitasString,
                     'created_by' => $userId,
                     'updated_by' => $userId,
                 ]);
@@ -80,12 +153,25 @@ class JamaahTableSeeder extends Seeder
     private function generateRandomAddress(): string
     {
         $streets = [
-            'KH. Ahmad Dahlan', 'Sultan Agung', 'Malioboro', 'Kaliurang', 'Gejayan',
-            'Urip Sumoharjo', 'Bantul', 'Sleman', 'Kaliurang Km', 'Palagan'
+            'KH. Ahmad Dahlan',
+            'Sultan Agung',
+            'Malioboro',
+            'Kaliurang',
+            'Gejayan',
+            'Urip Sumoharjo',
+            'Bantul',
+            'Sleman',
+            'Kaliurang Km',
+            'Palagan'
         ];
 
         $cities = [
-            'Yogyakarta', 'Bantul', 'Sleman', 'Godean', 'Depok', 'Berbah'
+            'Yogyakarta',
+            'Bantul',
+            'Sleman',
+            'Godean',
+            'Depok',
+            'Berbah'
         ];
 
         $street = $streets[array_rand($streets)];

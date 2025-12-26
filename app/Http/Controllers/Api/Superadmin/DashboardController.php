@@ -6,6 +6,8 @@ use App\Models\Aparatur;
 use App\Models\Category;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 use App\Models\AktivitasJamaah;
 use App\Models\Event;
 use App\Models\Takmir;
@@ -18,8 +20,15 @@ use App\Models\EventView;
 use App\Models\User;
 use App\Models\ProfileMasjid;
 
-class DashboardController extends Controller
+class DashboardController extends Controller implements HasMiddleware
 {
+    public static function middleware(): array
+    {
+        return [
+            new Middleware(['permission:dashboards.index'], only: ['__invoke']),
+        ];
+    }
+
     public function __invoke(Request $request)
     {
         $categories = Category::count();

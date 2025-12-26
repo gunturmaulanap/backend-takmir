@@ -15,6 +15,7 @@ use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
 
 class JadwalKhutbahController extends Controller implements HasMiddleware
 {
@@ -52,53 +53,59 @@ class JadwalKhutbahController extends Controller implements HasMiddleware
 
     public function store(StoreJadwalKhutbahRequest $request)
     {
-        $validated = $request->validated();
-        $user = $request->user();
-        $profileMasjidId = $this->getProfileMasjidId($user, $request);
+        try {
+            $validated = $request->validated();
 
-        if (!$profileMasjidId) {
+            // Ambil user dan profil masjid langsung dari request (seperti CategoryController & EventController)
+            $user = $request->user();
+            $masjidProfile = $user->getMasjidProfile();
+
+            if (!$masjidProfile) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Profile masjid tidak ditemukan.'
+                ], 400);
+            }
+
+            // Cek apakah sudah ada jadwal di tanggal yang sama
+            $existingSchedule = JadwalKhutbah::where('profile_masjid_id', $masjidProfile->id)
+                ->where('tanggal', $validated['tanggal'])
+                ->first();
+
+            if ($existingSchedule) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Jadwal khutbah untuk tanggal ini sudah ada.'
+                ], 400);
+            }
+
+            $jadwalKhutbah = JadwalKhutbah::create(array_merge($validated, [
+                'profile_masjid_id' => $masjidProfile->id,
+                'created_by' => $user->id,
+                'updated_by' => $user->id,
+            ]));
+
+            // Load relationships untuk response
+            $jadwalKhutbah->load(['profileMasjid', 'imam', 'khatib', 'muadzin', 'createdBy', 'updatedBy']);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Data jadwal khutbah berhasil disimpan.',
+                'data' => new JadwalKhutbahResource($jadwalKhutbah)
+            ], 201);
+        } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Profile masjid tidak ditemukan.'
-            ], 400);
-        }
-
-        // Validasi apakah imam, khatib, muadzin ada dan aktif di masjid ini
-        $validationResult = $this->validatePersonnel($profileMasjidId, $validated);
-        if (!$validationResult['valid']) {
+                'message' => 'Validasi gagal.',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => $validationResult['message']
-            ], 400);
+                'message' => 'Terjadi kesalahan saat menyimpan data jadwal khutbah.',
+                'error' => $e->getMessage()
+            ], 500);
         }
-
-        // Cek apakah sudah ada jadwal di tanggal yang sama
-        $existingSchedule = JadwalKhutbah::where('profile_masjid_id', $profileMasjidId)
-            ->where('tanggal', $validated['tanggal'])
-            ->first();
-
-        if ($existingSchedule) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Jadwal khutbah untuk tanggal ini sudah ada.'
-            ], 400);
-        }
-
-        $jadwalKhutbah = JadwalKhutbah::create([
-            'profile_masjid_id' => $profileMasjidId,
-            'created_by' => $user->id,
-            'updated_by' => $user->id,
-            ...$validated
-        ]);
-
-        // Load relationships untuk response
-        $jadwalKhutbah->load(['profileMasjid', 'imam', 'khatib', 'muadzin', 'createdBy', 'updatedBy']);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Data jadwal khutbah berhasil disimpan.',
-            'data' => $jadwalKhutbah
-        ], 201);
     }
 
     public function show(JadwalKhutbah $jadwalKhutbah)
@@ -114,44 +121,52 @@ class JadwalKhutbahController extends Controller implements HasMiddleware
 
     public function update(UpdateJadwalKhutbahRequest $request, JadwalKhutbah $jadwalKhutbah)
     {
-        $validated = $request->validated();
-        $user = $request->user();
+        try {
+            $validated = $request->validated();
 
-        // Validasi apakah imam, khatib, muadzin ada dan aktif di masjid ini
-        $validationResult = $this->validatePersonnel($jadwalKhutbah->profile_masjid_id, $validated);
-        if (!$validationResult['valid']) {
+            // Prepare data untuk update
+            $updateData = [
+                'updated_by' => $request->user()->id,
+            ];
+
+            // Cek apakah sudah ada jadwal di tanggal yang sama (kecuali jadwal ini sendiri)
+            $existingSchedule = JadwalKhutbah::where('profile_masjid_id', $jadwalKhutbah->profile_masjid_id)
+                ->where('tanggal', $validated['tanggal'])
+                ->where('id', '!=', $jadwalKhutbah->id)
+                ->first();
+
+            if ($existingSchedule) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Jadwal khutbah untuk tanggal ini sudah ada.'
+                ], 400);
+            }
+
+            // Merge dengan validated data
+            $jadwalKhutbah->update(array_merge($validated, $updateData));
+
+            // Reload jadwal khutbah untuk mendapatkan data terbaru termasuk slug baru
+            $jadwalKhutbah->refresh();
+            $jadwalKhutbah->load(['profileMasjid', 'imam', 'khatib', 'muadzin', 'createdBy', 'updatedBy']);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Data jadwal khutbah berhasil diperbarui.',
+                'data' => $jadwalKhutbah
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
                 'success' => false,
-                'message' => $validationResult['message']
-            ], 400);
-        }
-
-        // Cek apakah sudah ada jadwal di tanggal yang sama (kecuali jadwal ini sendiri)
-        $existingSchedule = JadwalKhutbah::where('profile_masjid_id', $jadwalKhutbah->profile_masjid_id)
-            ->where('tanggal', $validated['tanggal'])
-            ->where('id', '!=', $jadwalKhutbah->id)
-            ->first();
-
-        if ($existingSchedule) {
+                'message' => 'Validasi gagal.',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Jadwal khutbah untuk tanggal ini sudah ada.'
-            ], 400);
+                'message' => 'Terjadi kesalahan saat memperbarui data jadwal khutbah.',
+                'error' => $e->getMessage()
+            ], 500);
         }
-
-        $jadwalKhutbah->update([
-            'updated_by' => $user->id,
-            ...$validated
-        ]);
-
-        // Load relationships untuk response
-        $jadwalKhutbah->load(['profileMasjid', 'imam', 'khatib', 'muadzin', 'createdBy', 'updatedBy']);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Data jadwal khutbah berhasil diupdate.',
-            'data' => $jadwalKhutbah
-        ]);
     }
 
     public function destroy(JadwalKhutbah $jadwalKhutbah)
@@ -206,44 +221,7 @@ class JadwalKhutbahController extends Controller implements HasMiddleware
         ]);
     }
 
-    /**
-     * Validasi personnel (imam, khatib, muadzin) di masjid
-     */
-    private function validatePersonnel($profileMasjidId, $data)
-    {
-        // Validasi Imam
-        if (isset($data['imam_id'])) {
-            $imam = Imam::where('id', $data['imam_id'])
-                ->where('profile_masjid_id', $profileMasjidId)
-                ->first();
-            if (!$imam) {
-                return ['valid' => false, 'message' => 'Imam tidak ditemukan atau tidak aktif di masjid ini.'];
-            }
-        }
-
-        // Validasi Khatib
-        if (isset($data['khatib_id'])) {
-            $khatib = Khatib::where('id', $data['khatib_id'])
-                ->where('profile_masjid_id', $profileMasjidId)
-                ->first();
-            if (!$khatib) {
-                return ['valid' => false, 'message' => 'Khatib tidak ditemukan atau tidak aktif di masjid ini.'];
-            }
-        }
-
-        // Validasi Muadzin
-        if (isset($data['muadzin_id'])) {
-            $muadzin = Muadzin::where('id', $data['muadzin_id'])
-                ->where('profile_masjid_id', $profileMasjidId)
-                ->first();
-            if (!$muadzin) {
-                return ['valid' => false, 'message' => 'Muadzin tidak ditemukan atau tidak aktif di masjid ini.'];
-            }
-        }
-
-        return ['valid' => true, 'message' => ''];
-    }
-
+    
     /**
      * Get profile masjid ID berdasarkan role user
      */

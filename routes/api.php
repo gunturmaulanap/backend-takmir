@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\Superadmin\ProfileMasjidController;
 use App\Http\Controllers\Api\Superadmin\AdminController;
 use App\Http\Controllers\Api\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controllers\Api\Admin\JamaahController;
+use App\Http\Controllers\Api\Admin\AsatidzController;
 use App\Http\Controllers\Api\Admin\EventController;
 use App\Http\Controllers\Api\Admin\EventViewController;
 use App\Http\Controllers\Api\Admin\KhatibController;
@@ -20,6 +21,7 @@ use App\Http\Controllers\Api\Admin\ImamController;
 use App\Http\Controllers\Api\Admin\MuadzinController;
 use App\Http\Controllers\Api\Admin\JadwalKhutbahController;
 use App\Http\Controllers\Api\Admin\TransaksiKeuanganController;
+use App\Http\Controllers\Api\MeController;
 
 // Test endpoint (no auth required)
 Route::get('/test', function () {
@@ -44,6 +46,9 @@ Route::post('/refresh', [RefreshTokenController::class, 'refresh'])->middleware(
 
 // group route with middleware "auth"
 Route::group(['middleware' => 'auth:api'], function () {
+
+    // Get current authenticated user
+    Route::get('/me', MeController::class);
 
     // logout (hapus semua refresh tokens - forced logout dari semua devices)
     Route::post('/logout', [LoginController::class, 'logout']);
@@ -83,20 +88,15 @@ Route::group(['middleware' => 'auth:api'], function () {
         // Jamaah API
         Route::apiResource('/jamaahs', JamaahController::class);
 
+        // Asatidz API
+        Route::apiResource('/asatidzs', AsatidzController::class);
+        Route::get('/asatidzs/murid-tpq/available', [AsatidzController::class, 'getAvailableMuridTPQ']);
+
         // Events API
         Route::apiResource('/events', EventController::class);
 
         // Event Views (Kalender) API
         Route::get('/event-views', [EventViewController::class, 'index']);
-
-        // Khatib API
-        Route::apiResource('/khatibs', KhatibController::class);
-
-        // Imam API
-        Route::apiResource('/imams', ImamController::class);
-
-        // Muadzin API
-        Route::apiResource('/muadzins', MuadzinController::class);
 
         // Jadwal Khutbah API
         Route::apiResource('/jadwal-khutbahs', JadwalKhutbahController::class);
@@ -127,11 +127,15 @@ Route::prefix('superadmin')->as('superadmin.')->group(function () {
 
         // Profile Masjid API
         Route::apiResource('/profile-masjids', ProfileMasjidController::class);
+        Route::patch('/profile-masjids/{id}/status', [ProfileMasjidController::class, 'updateStatus'])
+            ->middleware(['auth:api', 'permission:profile_masjids.edit']);
         Route::put('/profile-masjids/{id}/toggle-active', [ProfileMasjidController::class, 'toggleActive'])
             ->middleware(['auth:api', 'permission:profile_masjids.edit']);
 
         // Admin API (Pengurus Masjid)
         Route::apiResource('/admins', AdminController::class);
+        Route::patch('/admins/{id}/status', [AdminController::class, 'updateStatus'])
+            ->middleware(['auth:api', 'permission:admins.edit']);
         Route::put('/admins/{id}/toggle-active', [AdminController::class, 'toggleActive'])
             ->middleware(['auth:api', 'permission:admins.edit']);
         Route::get('/admins/unassigned', [AdminController::class, 'unassigned'])

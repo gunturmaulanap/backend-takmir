@@ -21,8 +21,8 @@ class ProfileMasjidResource extends JsonResource
             'slug'          => $this->slug,
             'alamat'        => $this->alamat,
             'image'         => $this->image ? asset('storage/photos/' . $this->image) : null,
-            'created_at'    => $this->created_at->format('Y-m-d H:i:s'),
-            'updated_at'    => $this->updated_at->format('Y-m-d H:i:s'),
+            'created_at'    => $this->created_at?->format('Y-m-d H:i:s'),
+            'updated_at'    => $this->updated_at?->format('Y-m-d H:i:s'),
             'user'          => $this->whenLoaded('user', function () {
                 return [
                     'id'        => $this->user->id,

@@ -21,8 +21,17 @@ class UpdateImamRequest extends FormRequest
      */
     public function rules(): array
     {
+        $imam = $this->route('imam'); // Mendapatkan imam dari route
+        $profileMasjidId = $this->user()->getMasjidProfile()->id;
+
         return [
-            'nama' => 'required|string|max:255|unique:imams,nama,NULL,id,profile_masjid_id,' . $this->user()->getMasjidProfile()->id,
+            'nama' => [
+                'required',
+                'string',
+                'max:255',
+                // Unique validation, tapi exclude record yang sedang diupdate
+                "unique:imams,nama,{$imam->id},id,profile_masjid_id,{$profileMasjidId}"
+            ],
             'no_handphone' => 'nullable|string|max:20',
             'alamat' => 'nullable|string',
             'is_active' => 'boolean',

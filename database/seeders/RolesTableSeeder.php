@@ -17,23 +17,34 @@ class RolesTableSeeder extends Seeder
         // Pastikan izin sudah ada di database sebelum menjalankan seeder ini.
         // Anda mungkin perlu menjalankan PermissionTableSeeder terlebih dahulu.
 
-        // Membuat role 'superadmin'
-        $superadminRole = Role::create([
+        // Membuat atau mencari role 'superadmin'
+        $superadminRole = Role::firstOrCreate([
             'name' => 'superadmin',
             'guard_name' => 'api'
         ]);
 
-        // Meentapkan permissions untuk role 'superadmin'
-        $superadminRole->givePermissionTo(Permission::all());
+        // Hapus semua permission lama dan tetapkan yang baru
+        $superadminRole->syncPermissions([
+            "admins.index",
+            "admins.create",
+            "admins.edit",
+            "admins.delete",
+            "profile-masjids.index",
+            "profile-masjids.create",
+            "profile-masjids.edit",
+            "profile-masjids.delete",
+            "dashboards.index",
 
-        // Membuat role 'admin'
-        $adminRole = Role::create([
+        ]);
+
+        // Membuat atau mencari role 'admin'
+        $adminRole = Role::firstOrCreate([
             'name' => 'admin',
             'guard_name' => 'api'
         ]);
 
-        // Menetapkan permissions untuk role 'admin'
-        $adminRole->givePermissionTo([
+        // Hapus semua permission lama dan tetapkan yang baru
+        $adminRole->syncPermissions([
             "staffs.index",
             "staffs.create",
             "staffs.edit",
@@ -87,16 +98,20 @@ class RolesTableSeeder extends Seeder
             "aktivitas_jamaahs.create",
             "aktivitas_jamaahs.edit",
             "aktivitas_jamaahs.delete",
+            // "transaksi-keuangan.index",
+            // "transaksi-keuangan.create",
+            // "transaksi-keuangan.edit",
+            // "transaksi-keuangan.delete",
         ]);
 
-        // Membuat role 'takmir'
-        $takmirRole = Role::create([
+        // Membuat atau mencari role 'takmir'
+        $takmirRole = Role::firstOrCreate([
             'name' => 'takmir',
             'guard_name' => 'api'
         ]);
 
-        // Menetapkan permissions untuk role 'takmir'
-        $takmirRole->givePermissionTo([
+        // Hapus semua permission lama dan tetapkan yang baru
+        $takmirRole->syncPermissions([
             "staffs.index",
             "staffs.create",
             "staffs.edit",
@@ -125,7 +140,15 @@ class RolesTableSeeder extends Seeder
             "jamaahs.create",
             "jamaahs.edit",
             "jamaahs.delete",
-            "event_views.index"
+            "event_views.index",
+            "asatidzs.index",
+            "asatidzs.create",
+            "asatidzs.edit",
+            "asatidzs.delete",
+            // "transaksi-keuangan.index",
+            // "transaksi-keuangan.create",
+            // "transaksi-keuangan.edit",
+            // "transaksi-keuangan.delete",
         ]);
     }
 }

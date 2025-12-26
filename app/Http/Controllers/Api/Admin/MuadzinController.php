@@ -7,7 +7,9 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreMuadzinRequest;
 use App\Http\Requests\UpdateMuadzinRequest;
 use App\Http\Resources\MuadzinResource;
+use App\Http\Resources\MuadzinDetailResource;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Http\Request;
@@ -28,12 +30,9 @@ class MuadzinController extends Controller implements HasMiddleware
     {
         $query = Muadzin::with(['profileMasjid', 'createdBy', 'updatedBy']);
 
-
         $muadzins = $query->latest()->paginate(4);
 
-        return response()->json(
-            MuadzinResource::customResponse(true, 'List Data Muadzin', MuadzinResource::collection($muadzins))
-        );
+        return new MuadzinResource(true, 'List Data Muadzin', MuadzinDetailResource::collection($muadzins));
     }
 
     public function store(StoreMuadzinRequest $request)
@@ -51,22 +50,19 @@ class MuadzinController extends Controller implements HasMiddleware
 
         $muadzin = Muadzin::create([
             'profile_masjid_id' => $profileMasjidId,
+            'slug' => Str::slug($validated['nama'] . '-' . time()),
             'created_by' => $user->id,
             'updated_by' => $user->id,
             'is_active' => $validated['is_active'] ?? true,
             ...array_diff_key($validated, array_flip(['is_active']))
         ]);
 
-        return response()->json(
-            MuadzinResource::customResponse(true, 'Data muadzin berhasil disimpan.', new MuadzinResource($muadzin->load(['profileMasjid', 'createdBy', 'updatedBy'])))
-        );
+        return new MuadzinResource(true, 'Data muadzin berhasil disimpan.', new MuadzinDetailResource($muadzin->load(['profileMasjid', 'createdBy', 'updatedBy'])));
     }
 
     public function show(Muadzin $muadzin)
     {
-        return response()->json(
-            MuadzinResource::customResponse(true, 'Detail data muadzin berhasil dimuat.', new MuadzinResource($muadzin->load(['profileMasjid', 'createdBy', 'updatedBy'])))
-        );
+        return new MuadzinResource(true, 'Detail data muadzin berhasil dimuat.', new MuadzinDetailResource($muadzin->load(['profileMasjid', 'createdBy', 'updatedBy'])));
     }
 
     public function update(UpdateMuadzinRequest $request, Muadzin $muadzin)
@@ -79,18 +75,24 @@ class MuadzinController extends Controller implements HasMiddleware
             ...$validated
         ]);
 
-        return response()->json(
-            MuadzinResource::customResponse(true, 'Data muadzin berhasil diupdate.', new MuadzinResource($muadzin->load(['profileMasjid', 'createdBy', 'updatedBy'])))
-        );
+        return new MuadzinResource(true, 'Data muadzin berhasil diupdate.', new MuadzinDetailResource($muadzin->load(['profileMasjid', 'createdBy', 'updatedBy'])));
     }
 
     public function destroy(Muadzin $muadzin)
     {
+        // Cek apakah muadzin sedang digunakan di jadwal khutbah
+        $usedInJadwal = \App\Models\JadwalKhutbah::where('muadzin_id', $muadzin->id)->exists();
+
+        if ($usedInJadwal) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Muadzin tidak dapat dihapus karena sedang digunakan dalam jadwal khutbah.'
+            ], 422);
+        }
+
         $muadzin->delete();
 
-        return response()->json(
-            MuadzinResource::customResponse(true, 'Data muadzin berhasil dihapus.', null)
-        );
+        return new MuadzinResource(true, 'Data muadzin berhasil dihapus.', null);
     }
 
     /**
@@ -116,9 +118,7 @@ class MuadzinController extends Controller implements HasMiddleware
             'updated_by' => $user->id
         ]);
 
-        return response()->json(
-            MuadzinResource::customResponse(true, 'Status muadzin berhasil diperbarui!', new MuadzinResource($muadzin->load(['profileMasjid', 'createdBy', 'updatedBy'])))
-        );
+        return new MuadzinResource(true, 'Status muadzin berhasil diperbarui!', new MuadzinDetailResource($muadzin->load(['profileMasjid', 'createdBy', 'updatedBy'])));
     }
 
     /**

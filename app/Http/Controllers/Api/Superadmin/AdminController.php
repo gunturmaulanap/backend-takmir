@@ -36,7 +36,7 @@ class AdminController extends Controller implements HasMiddleware
     public function index()
     {
         try {
-            $query = User::role('admin')->with(['profileMasjid', 'roles']);
+            $query = User::role('admin', 'api')->with(['profileMasjid', 'roles']);
 
             // Search functionality
             if (request()->filled('search')) {
@@ -69,15 +69,10 @@ class AdminController extends Controller implements HasMiddleware
                 'profile_masjid_id' => request()->profile_masjid_id
             ]);
 
-            if ($admins->isEmpty()) {
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Belum ada data admin.',
-                    'data' => []
-                ], 200);
-            }
-
-            return new AdminResource(true, 'List Data Admin Masjid', $admins);
+            return AdminResource::collection($admins)->additional([
+                'success' => true,
+                'message' => $admins->isEmpty() ? 'Belum ada data admin.' : 'List Data Admin Masjid',
+            ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -125,7 +120,6 @@ class AdminController extends Controller implements HasMiddleware
                 'username'      => $request->username,
                 'password'      => Hash::make($request->password),
                 'is_active'     => true, // Default active
-                'created_by'    => $request->user()->id,
             ]);
 
             // Assign admin role
@@ -137,16 +131,14 @@ class AdminController extends Controller implements HasMiddleware
                 if ($profileMasjid && !$profileMasjid->user_id) {
                     $profileMasjid->update([
                         'user_id' => $user->id,
-                        'updated_by' => $request->user()->id
                     ]);
                 }
             }
 
-            if ($user) {
-                return new AdminResource(true, 'Data Admin Berhasil Disimpan!', $user->load(['profileMasjid', 'roles']));
-            }
-
-            return new AdminResource(false, 'Data Admin Gagal Disimpan!', null);
+            return (new AdminResource($user->load(['profileMasjid', 'roles'])))->additional([
+                'success' => true,
+                'message' => 'Data Admin Berhasil Disimpan!',
+            ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -162,13 +154,19 @@ class AdminController extends Controller implements HasMiddleware
     public function show($id)
     {
         try {
-            $admin = User::role('admin')->with(['profileMasjid', 'roles'])->find($id);
+            $admin = User::role('admin', 'api')->with(['profileMasjid', 'roles'])->find($id);
 
-            if ($admin) {
-                return new AdminResource(true, 'Detail Data Admin!', $admin);
+            if (!$admin) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Detail Data Admin Tidak Ditemukan!',
+                ], 404);
             }
 
-            return new AdminResource(false, 'Detail Data Admin Tidak Ditemukan!', null);
+            return (new AdminResource($admin))->additional([
+                'success' => true,
+                'message' => 'Detail Data Admin!',
+            ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -200,16 +198,18 @@ class AdminController extends Controller implements HasMiddleware
         }
 
         try {
-            $admin = User::role('admin')->find($id);
+            $admin = User::role('admin', 'api')->find($id);
             if (!$admin) {
-                return new AdminResource(false, 'Admin Tidak Ditemukan!', null);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Admin Tidak Ditemukan!',
+                ], 404);
             }
 
             $updateData = [
                 'name'          => $request->name,
                 'email'         => $request->email,
                 'username'      => $request->username,
-                'updated_by'    => $request->user()->id,
             ];
 
             // Update password if provided
@@ -219,13 +219,13 @@ class AdminController extends Controller implements HasMiddleware
 
             $admin->update($updateData);
 
-            // Handle profile masjid assignment
-            if ($request->filled('profile_masjid_id')) {
-                // Remove from old profile if exists
-                if ($admin->profileMasjid) {
+            // Hanya handle profile masjid assignment jika field diisi secara eksplisit
+            // Jangan menghapus assignment yang sudah ada
+            if ($request->has('profile_masjid_id') && $request->filled('profile_masjid_id')) {
+                // Remove from old profile if exists and different
+                if ($admin->profileMasjid && $admin->profileMasjid->id != $request->profile_masjid_id) {
                     $admin->profileMasjid->update([
                         'user_id' => null,
-                        'updated_by' => $request->user()->id
                     ]);
                 }
 
@@ -234,24 +234,14 @@ class AdminController extends Controller implements HasMiddleware
                 if ($profileMasjid) {
                     $profileMasjid->update([
                         'user_id' => $admin->id,
-                        'updated_by' => $request->user()->id
-                    ]);
-                }
-            } else {
-                // Remove from current profile if profile_masjid_id is null
-                if ($admin->profileMasjid) {
-                    $admin->profileMasjid->update([
-                        'user_id' => null,
-                        'updated_by' => $request->user()->id
                     ]);
                 }
             }
 
-            if ($admin) {
-                return new AdminResource(true, 'Data Admin Berhasil Diupdate!', $admin->load(['profileMasjid', 'roles']));
-            }
-
-            return new AdminResource(false, 'Data Admin Gagal Diupdate!', null);
+            return (new AdminResource($admin->load(['profileMasjid', 'roles'])))->additional([
+                'success' => true,
+                'message' => 'Data Admin Berhasil Diupdate!',
+            ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -267,24 +257,32 @@ class AdminController extends Controller implements HasMiddleware
     public function destroy($id)
     {
         try {
-            $admin = User::role('admin')->find($id);
+            $admin = User::role('admin', 'api')->find($id);
             if (!$admin) {
-                return new AdminResource(false, 'Admin Tidak Ditemukan!', null);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Admin Tidak Ditemukan!',
+                ], 404);
             }
 
             // Remove from profile masjid if linked
             if ($admin->profileMasjid) {
                 $admin->profileMasjid->update([
                     'user_id' => null,
-                    'updated_by' => request()->user()->id
                 ]);
             }
 
             if ($admin->delete()) {
-                return new AdminResource(true, 'Data Admin Berhasil Dihapus!', null);
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Data Admin Berhasil Dihapus!',
+                ], 200);
             }
 
-            return new AdminResource(false, 'Data Admin Gagal Dihapus!', null);
+            return response()->json([
+                'success' => false,
+                'message' => 'Data Admin Gagal Dihapus!',
+            ], 400);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -304,20 +302,39 @@ class AdminController extends Controller implements HasMiddleware
         ]);
 
         try {
-            $admin = User::role('admin')->find($id);
+            $admin = User::role('admin', 'api')->find($id);
             if (!$admin) {
-                return new AdminResource(false, 'Admin Tidak Ditemukan!', null);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Admin Tidak Ditemukan!',
+                ], 404);
             }
 
             // Update the is_active status
             $admin->update([
                 'is_active' => $request->is_active,
-                'updated_by' => $request->user()->id
             ]);
+
+            // Jika admin memiliki profile masjid, update semua takmir yang terhubung
+            if ($admin->profileMasjid) {
+                $takmirs = \App\Models\Takmir::where('profile_masjid_id', $admin->profileMasjid->id)->get();
+                foreach ($takmirs as $takmir) {
+                    if ($takmir->user) {
+                        $takmir->user->update([
+                            'is_active' => $request->is_active,
+                        ]);
+                    }
+                }
+            }
+
+            $admin->load(['profileMasjid', 'roles']);
 
             $status = $request->is_active ? 'diaktifkan' : 'dinonaktifkan';
 
-            return new AdminResource(true, "Admin berhasil {$status}!", $admin->load(['profileMasjid', 'roles']));
+            return (new AdminResource($admin))->additional([
+                'success' => true,
+                'message' => "Admin berhasil {$status}!",
+            ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -333,20 +350,38 @@ class AdminController extends Controller implements HasMiddleware
     public function toggleActive($id)
     {
         try {
-            $admin = User::role('admin')->find($id);
+            $admin = User::role('admin', 'api')->find($id);
             if (!$admin) {
-                return new AdminResource(false, 'Admin Tidak Ditemukan!', null);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Admin Tidak Ditemukan!',
+                ], 404);
             }
 
             // Toggle the is_active status
+            $newStatus = !$admin->is_active;
             $admin->update([
-                'is_active' => !$admin->is_active,
-                'updated_by' => request()->user()->id
+                'is_active' => $newStatus,
             ]);
 
-            $status = $admin->is_active ? 'diaktifkan' : 'dinonaktifkan';
+            // Jika admin memiliki profile masjid, update semua takmir yang terhubung
+            if ($admin->profileMasjid) {
+                $takmirs = \App\Models\Takmir::where('profile_masjid_id', $admin->profileMasjid->id)->get();
+                foreach ($takmirs as $takmir) {
+                    if ($takmir->user) {
+                        $takmir->user->update([
+                            'is_active' => $newStatus,
+                        ]);
+                    }
+                }
+            }
 
-            return new AdminResource(true, "Admin berhasil {$status}!", $admin->load(['profileMasjid', 'roles']));
+            $status = $newStatus ? 'diaktifkan' : 'dinonaktifkan';
+
+            return (new AdminResource($admin->load(['profileMasjid', 'roles'])))->additional([
+                'success' => true,
+                'message' => "Admin berhasil {$status}!",
+            ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -362,7 +397,7 @@ class AdminController extends Controller implements HasMiddleware
     public function unassigned()
     {
         try {
-            $admins = User::role('admin')
+            $admins = User::role('admin', 'api')
                 ->whereDoesntHave('profileMasjid')
                 ->where('is_active', true)
                 ->select('id', 'name', 'email')

@@ -98,11 +98,38 @@ class JamaahController extends Controller implements HasMiddleware
     }
 
 
-    public function destroy(Jamaah $jamaah)
+    public function destroy($id)
     {
-        $jamaah->delete();
+        try {
+            $user = request()->user();
+            $profileMasjidId = $user->getMasjidProfile()->id;
 
-        return new JamaahResource(true, 'Data jamaah berhasil dihapus.', null);
+            // Cari jamaah yang benar-benar ada dan milik masjid user
+            $jamaah = Jamaah::where('id', $id)
+                ->where('profile_masjid_id', $profileMasjidId)
+                ->first();
+
+            if (!$jamaah) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Data jamaah tidak ditemukan atau tidak memiliki akses.'
+                ], 404);
+            }
+
+            $jamaah->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Data jamaah berhasil dihapus.',
+                'data' => null
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menghapus data jamaah.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     /**

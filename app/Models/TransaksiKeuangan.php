@@ -138,7 +138,7 @@ class TransaksiKeuangan extends Model
                 ->sum('jumlah');
 
             $data[] = [
-                'month' => Carbon::create($year, $month)->format('M'),
+                'month' => Carbon::create($year, $month)->locale('id')->translatedFormat('F'),
                 'income' => (float) $income,
                 'expense' => (float) $expense,
                 'saldo' => (float) ($income - $expense),

@@ -24,6 +24,7 @@ class DatabaseSeeder extends Seeder
         $this->call(KhatibTableSeeder::class);
         $this->call(MuadzinTableSeeder::class);
         $this->call(JamaahTableSeeder::class);
+        $this->call(AsatidzSeeder::class); // Harus setelah JamaahTableSeeder
         $this->call(JadwalKhutbahTableSeeder::class);
         $this->call(EventTableSeeder::class);
         $this->call(TransaksiKeuanganTableSeeder::class);

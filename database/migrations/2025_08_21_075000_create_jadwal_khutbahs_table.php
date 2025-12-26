@@ -14,9 +14,9 @@ return new class extends Migration
         Schema::create('jadwal_khutbahs', function (Blueprint $table) {
             $table->id();
             $table->date('tanggal');
-            $table->foreignId('imam_id')->nullable()->constrained('imams')->cascadeOnDelete();
-            $table->foreignId('khatib_id')->nullable()->constrained('khatibs')->cascadeOnDelete();
-            $table->foreignId('muadzin_id')->nullable()->constrained('muadzins')->cascadeOnDelete();
+            $table->foreignId('imam_id')->nullable()->constrained('imams')->nullOnDelete();
+            $table->foreignId('khatib_id')->nullable()->constrained('khatibs')->nullOnDelete();
+            $table->foreignId('muadzin_id')->nullable()->constrained('muadzins')->nullOnDelete();
             $table->foreignId('profile_masjid_id')->constrained('profile_masjids')->cascadeOnDelete();
             $table->text('tema_khutbah')->nullable();
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();

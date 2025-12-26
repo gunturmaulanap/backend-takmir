@@ -20,8 +20,8 @@ class AdminResource extends JsonResource
             'username'      => $this->username,
             'email'         => $this->email,
             'is_active'     => $this->is_active,
-            'created_at'    => $this->created_at->format('Y-m-d H:i:s'),
-            'updated_at'    => $this->updated_at->format('Y-m-d H:i:s'),
+            'created_at'    => $this->created_at?->format('Y-m-d H:i:s'),
+            'updated_at'    => $this->updated_at?->format('Y-m-d H:i:s'),
             'roles'         => $this->whenLoaded('roles', function () {
                 return $this->roles->map(function ($role) {
                     return [

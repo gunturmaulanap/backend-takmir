@@ -23,10 +23,10 @@ class ProfileMasjidController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
-            new Middleware(['permission:profile_masjids.index'], only: ['index']),
-            new Middleware(['permission:profile_masjids.create'], only: ['store']),
-            new Middleware(['permission:profile_masjids.edit'], only: ['update']),
-            new Middleware(['permission:profile_masjids.delete'], only: ['destroy']),
+            new Middleware(['permission:profile-masjids.index'], only: ['index']),
+            new Middleware(['permission:profile-masjids.create'], only: ['store']),
+            new Middleware(['permission:profile-masjids.edit'], only: ['update']),
+            new Middleware(['permission:profile-masjids.delete'], only: ['destroy']),
         ];
     }
 
@@ -41,7 +41,7 @@ class ProfileMasjidController extends Controller implements HasMiddleware
             // Search functionality
             if (request()->filled('search')) {
                 $query->where('nama', 'like', '%' . request()->search . '%')
-                      ->orWhere('alamat', 'like', '%' . request()->search . '%');
+                    ->orWhere('alamat', 'like', '%' . request()->search . '%');
             }
 
             // Filter by status
@@ -60,15 +60,10 @@ class ProfileMasjidController extends Controller implements HasMiddleware
             $profileMasjids = $query->latest()->paginate(10);
             $profileMasjids->appends(['search' => request()->search, 'status' => request()->status]);
 
-            if ($profileMasjids->isEmpty()) {
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Belum ada data profile masjid.',
-                    'data' => []
-                ], 200);
-            }
-
-            return new ProfileMasjidResource(true, 'List Data Profile Masjid', $profileMasjids);
+            return ProfileMasjidResource::collection($profileMasjids)->additional([
+                'success' => true,
+                'message' => $profileMasjids->isEmpty() ? 'Belum ada data profile masjid.' : 'List Data Profile Masjid',
+            ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -271,23 +266,36 @@ class ProfileMasjidController extends Controller implements HasMiddleware
         try {
             $profileMasjid = ProfileMasjid::with('user')->find($id);
             if (!$profileMasjid || !$profileMasjid->user) {
-                return new ProfileMasjidResource(false, 'Profile Masjid atau User tidak ditemukan!', null);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Profile Masjid atau User tidak ditemukan!',
+                ], 404);
             }
 
             // Update the is_active status di tabel users
             $profileMasjid->user->update([
                 'is_active' => $request->is_active,
-                'updated_by' => $request->user()->id
             ]);
 
-            // Update audit trail di profile masjid
-            $profileMasjid->update([
-                'updated_by' => $request->user()->id
-            ]);
+            // Update semua takmir yang terhubung dengan masjid ini
+            $takmirs = \App\Models\Takmir::where('profile_masjid_id', $profileMasjid->id)->get();
+            foreach ($takmirs as $takmir) {
+                if ($takmir->user) {
+                    $takmir->user->update([
+                        'is_active' => $request->is_active,
+                    ]);
+                }
+            }
+
+            // Reload relationships
+            $profileMasjid->load('user');
 
             $status = $request->is_active ? 'diaktifkan' : 'dinonaktifkan';
 
-            return new ProfileMasjidResource(true, "Admin masjid berhasil {$status}!", $profileMasjid->load('user'));
+            return (new ProfileMasjidResource($profileMasjid))->additional([
+                'success' => true,
+                'message' => "Admin masjid berhasil {$status}!",
+            ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,

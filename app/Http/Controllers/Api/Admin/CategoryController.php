@@ -82,13 +82,7 @@ class CategoryController extends Controller implements HasMiddleware
             $user = Auth::user();
             $profileMasjidId = $this->getProfileMasjidId($user, $request);
 
-            // Debug: Log user info
-            Log::info("CategoryController Debug", [
-                'user_id' => $user->id,
-                'user_roles' => $user->roles->pluck('name'),
-                'profile_masjid_id' => $profileMasjidId,
-                'is_superadmin' => $user->roles->contains('name', 'superadmin')
-            ]);
+
 
             $query = Category::query();
 

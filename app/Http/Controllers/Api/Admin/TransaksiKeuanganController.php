@@ -55,6 +55,15 @@ class TransaksiKeuanganController extends Controller implements HasMiddleware
             $query->where('kategori', 'like', '%' . $request->kategori . '%');
         }
 
+        // Search filter - mencari di kategori dan keterangan
+        if ($request->filled('search')) {
+            $searchTerm = $request->search;
+            $query->where(function($q) use ($searchTerm) {
+                $q->where('kategori', 'like', '%' . $searchTerm . '%')
+                  ->orWhere('keterangan', 'like', '%' . $searchTerm . '%');
+            });
+        }
+
         // Filter berdasarkan tanggal
         if ($request->filled('start_date') && $request->filled('end_date')) {
             $query->byDateRange($request->start_date, $request->end_date);
@@ -156,49 +165,49 @@ class TransaksiKeuanganController extends Controller implements HasMiddleware
         );
     }
 
-    public function show(TransaksiKeuangan $transaksiKeuangan)
+    public function show(TransaksiKeuangan $transaction)
     {
         return response()->json(
-            TransaksiKeuanganResource::customResponse(true, 'Detail data transaksi keuangan.', new TransaksiKeuanganResource($transaksiKeuangan->load(['profileMasjid', 'createdBy', 'updatedBy'])))
+            TransaksiKeuanganResource::customResponse(true, 'Detail data transaksi keuangan.', new TransaksiKeuanganResource($transaction->load(['profileMasjid', 'createdBy', 'updatedBy'])))
         );
     }
 
-    public function update(UpdateTransaksiKeuanganRequest $request, TransaksiKeuangan $transaksiKeuangan)
+    public function update(UpdateTransaksiKeuanganRequest $request, TransaksiKeuangan $transaction)
     {
         $validated = $request->validated();
         $user = $request->user();
 
-        $buktiTransaksi = $transaksiKeuangan->bukti_transaksi;
+        $buktiTransaksi = $transaction->bukti_transaksi;
 
         if ($request->hasFile('bukti_transaksi')) {
             // Hapus file lama jika ada
-            if ($transaksiKeuangan->bukti_transaksi) {
-                Storage::disk('public')->delete('bukti-transaksi/' . $transaksiKeuangan->bukti_transaksi);
+            if ($transaction->bukti_transaksi) {
+                Storage::disk('public')->delete('bukti-transaksi/' . $transaction->bukti_transaksi);
             }
 
             $buktiTransaksi = time() . '.' . $request->file('bukti_transaksi')->getClientOriginalExtension();
             $request->file('bukti_transaksi')->storeAs('bukti-transaksi', $buktiTransaksi, 'public');
         }
 
-        $transaksiKeuangan->update([
+        $transaction->update([
             'bukti_transaksi' => $buktiTransaksi,
             'updated_by' => $user->id,
             ...$validated
         ]);
 
         return response()->json(
-            TransaksiKeuanganResource::customResponse(true, 'Data transaksi keuangan berhasil diupdate.', new TransaksiKeuanganResource($transaksiKeuangan->load(['profileMasjid', 'createdBy', 'updatedBy'])))
+            TransaksiKeuanganResource::customResponse(true, 'Data transaksi keuangan berhasil diupdate.', new TransaksiKeuanganResource($transaction->load(['profileMasjid', 'createdBy', 'updatedBy'])))
         );
     }
 
-    public function destroy(TransaksiKeuangan $transaksiKeuangan)
+    public function destroy(TransaksiKeuangan $transaction)
     {
         // Hapus file bukti transaksi jika ada
-        if ($transaksiKeuangan->bukti_transaksi) {
-            Storage::disk('public')->delete('bukti-transaksi/' . $transaksiKeuangan->bukti_transaksi);
+        if ($transaction->bukti_transaksi) {
+            Storage::disk('public')->delete('bukti-transaksi/' . $transaction->bukti_transaksi);
         }
 
-        $transaksiKeuangan->delete();
+        $transaction->delete();
 
         return response()->json(
             TransaksiKeuanganResource::customResponse(true, 'Data transaksi keuangan berhasil dihapus.', null)
@@ -224,6 +233,7 @@ class TransaksiKeuanganController extends Controller implements HasMiddleware
         $totalSaldo = TransaksiKeuangan::getTotalSaldo($profileMasjidId);
         $totalIncome = TransaksiKeuangan::getTotalIncome($profileMasjidId);
         $totalExpense = TransaksiKeuangan::getTotalExpense($profileMasjidId);
+        $totalTransactions = TransaksiKeuangan::byMasjid($profileMasjidId)->count();
 
         // Data bulan ini
         $currentMonth = Carbon::now();
@@ -255,6 +265,7 @@ class TransaksiKeuanganController extends Controller implements HasMiddleware
                     'total_saldo' => (float) $totalSaldo,
                     'total_income' => (float) $totalIncome,
                     'total_expense' => (float) $totalExpense,
+                    'total_transactions' => $totalTransactions,
                     'monthly_income' => (float) $monthlyIncome,
                     'monthly_expense' => (float) $monthlyExpense,
                     'monthly_saldo' => (float) ($monthlyIncome - $monthlyExpense),
@@ -280,8 +291,34 @@ class TransaksiKeuanganController extends Controller implements HasMiddleware
             ], 400);
         }
 
-        $year = $request->get('year', Carbon::now()->year);
-        $chartData = TransaksiKeuangan::getMonthlyChartData($profileMasjidId, $year);
+        // Jika ada filter date range, gunakan filter tersebut
+        if ($request->filled('start_date') && $request->filled('end_date')) {
+            // Query transaksi dalam range tanggal dan kelompokkan per bulan
+            $transactions = TransaksiKeuangan::byMasjid($profileMasjidId)
+                ->whereBetween('tanggal', [$request->start_date, $request->end_date])
+                ->selectRaw('
+                    DATE_FORMAT(tanggal, "%M %Y") as month_name,
+                    MONTH(tanggal) as month_num,
+                    YEAR(tanggal) as year,
+                    SUM(CASE WHEN type = "income" THEN jumlah ELSE 0 END) as income,
+                    SUM(CASE WHEN type = "expense" THEN jumlah ELSE 0 END) as expense
+                ')
+                ->groupBy('month_name', 'month_num', 'year')
+                ->orderByRaw('year ASC, month_num ASC')
+                ->get();
+
+            $chartData = $transactions->map(function($item) {
+                return [
+                    'month' => Carbon::createFromDate($item->year, $item->month_num, 1)->locale('id')->translatedFormat('F Y'),
+                    'income' => (float) $item->income,
+                    'expense' => (float) $item->expense,
+                ];
+            })->toArray();
+        } else {
+            // Default: gunakan tahun (behavior sebelumnya)
+            $year = $request->get('year', Carbon::now()->year);
+            $chartData = TransaksiKeuangan::getMonthlyChartData($profileMasjidId, $year);
+        }
 
         return response()->json([
             'success' => true,

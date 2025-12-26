@@ -137,6 +137,16 @@ class KhatibController extends Controller implements HasMiddleware
      */
     public function destroy(Khatib $khatib)
     {
+        // Cek apakah khatib sedang digunakan di jadwal khutbah
+        $usedInJadwal = \App\Models\JadwalKhutbah::where('khatib_id', $khatib->id)->exists();
+
+        if ($usedInJadwal) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Khatib tidak dapat dihapus karena sedang digunakan dalam jadwal khutbah.'
+            ], 422);
+        }
+
         $khatib->delete();
         return new KhatibResource(true, 'Khatib berhasil dihapus.', null);
     }

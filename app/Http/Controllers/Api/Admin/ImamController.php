@@ -7,7 +7,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreImamRequest;
 use App\Http\Requests\UpdateImamRequest;
 use App\Http\Resources\ImamResource;
-use Illuminate\Support\Facades\DB;
+use App\Http\Resources\ImamDetailResource;
+use Illuminate\Support\Str;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Http\Request;
@@ -28,12 +29,9 @@ class ImamController extends Controller implements HasMiddleware
     {
         $query = Imam::with(['profileMasjid', 'createdBy', 'updatedBy']);
 
-
         $imams = $query->latest()->paginate(4);
 
-        return response()->json(
-            ImamResource::customResponse(true, 'List Data Imam', ImamResource::collection($imams))
-        );
+        return new ImamResource(true, 'List Data Imam', ImamDetailResource::collection($imams));
     }
 
     public function store(StoreImamRequest $request)
@@ -51,22 +49,19 @@ class ImamController extends Controller implements HasMiddleware
 
         $imam = Imam::create([
             'profile_masjid_id' => $profileMasjidId,
+            'slug' => Str::slug($validated['nama'] . '-' . time()),
             'created_by' => $user->id,
             'updated_by' => $user->id,
             'is_active' => $validated['is_active'] ?? true,
             ...array_diff_key($validated, array_flip(['is_active']))
         ]);
 
-        return response()->json(
-            ImamResource::customResponse(true, 'Data imam berhasil disimpan.', new ImamResource($imam->load(['profileMasjid', 'createdBy', 'updatedBy'])))
-        );
+        return new ImamResource(true, 'Data imam berhasil disimpan.', new ImamDetailResource($imam->load(['profileMasjid', 'createdBy', 'updatedBy'])));
     }
 
     public function show(Imam $imam)
     {
-        return response()->json(
-            ImamResource::customResponse(true, 'Detail data imam berhasil dimuat.', new ImamResource($imam->load(['profileMasjid', 'createdBy', 'updatedBy'])))
-        );
+        return new ImamResource(true, 'Detail data imam berhasil dimuat.', new ImamDetailResource($imam->load(['profileMasjid', 'createdBy', 'updatedBy'])));
     }
 
     public function update(UpdateImamRequest $request, Imam $imam)
@@ -79,18 +74,24 @@ class ImamController extends Controller implements HasMiddleware
             ...$validated
         ]);
 
-        return response()->json(
-            ImamResource::customResponse(true, 'Data imam berhasil diupdate.', new ImamResource($imam->load(['profileMasjid', 'createdBy', 'updatedBy'])))
-        );
+        return new ImamResource(true, 'Data imam berhasil diupdate.', new ImamDetailResource($imam->load(['profileMasjid', 'createdBy', 'updatedBy'])));
     }
 
     public function destroy(Imam $imam)
     {
+        // Cek apakah imam sedang digunakan di jadwal khutbah
+        $usedInJadwal = \App\Models\JadwalKhutbah::where('imam_id', $imam->id)->exists();
+
+        if ($usedInJadwal) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Imam tidak dapat dihapus karena sedang digunakan dalam jadwal khutbah.'
+            ], 422);
+        }
+
         $imam->delete();
 
-        return response()->json(
-            ImamResource::customResponse(true, 'Data imam berhasil dihapus.', null)
-        );
+        return new ImamResource(true, 'Data imam berhasil dihapus.', null);
     }
 
     /**
@@ -116,9 +117,7 @@ class ImamController extends Controller implements HasMiddleware
             'updated_by' => $user->id
         ]);
 
-        return response()->json(
-            ImamResource::customResponse(true, 'Status imam berhasil diperbarui!', new ImamResource($imam->load(['profileMasjid', 'createdBy', 'updatedBy'])))
-        );
+        return new ImamResource(true, 'Status imam berhasil diperbarui!', new ImamDetailResource($imam->load(['profileMasjid', 'createdBy', 'updatedBy'])));
     }
 
     /**
