@@ -86,6 +86,35 @@ class LoginController extends Controller
             $masjidProfile = $user->getMasjidProfile();
             $permissions = $user->getPermissionArray();
 
+            // Convert profile_masjid to array if exists
+            if ($masjidProfile) {
+                $masjidProfile = [
+                    'id' => $masjidProfile->id,
+                    'nama' => $masjidProfile->nama,
+                    'alamat' => $masjidProfile->alamat,
+                    'provinsi' => $masjidProfile->provinsi,
+                    'kota_kabupaten' => $masjidProfile->kota_kabupaten,
+                    'kecamatan' => $masjidProfile->kecamatan,
+                    'kelurahan' => $masjidProfile->kelurahan,
+                    'kode_pos' => $masjidProfile->kode_pos,
+                    'telepon' => $masjidProfile->telepon,
+                    'email' => $masjidProfile->email,
+                    'website' => $masjidProfile->website,
+                    'kapasitas_jamaah' => $masjidProfile->kapasitas_jamaah,
+                    'luas_tanah' => $masjidProfile->luas_tanah,
+                    'luas_bangunan' => $masjidProfile->luas_bangunan,
+                    'tahun_berdiri' => $masjidProfile->tahun_berdiri,
+                    'nama_ketua' => $masjidProfile->nama_ketua,
+                    'telepon_ketua' => $masjidProfile->telepon_ketua,
+                    'nama_bendahara' => $masjidProfile->nama_bendahara,
+                    'telepon_bendahara' => $masjidProfile->telepon_bendahara,
+                    'nama_amar' => $masjidProfile->nama_amar,
+                    'telepon_amar' => $masjidProfile->telepon_amar,
+                    'fax' => $masjidProfile->fax,
+                    'user_id' => $masjidProfile->user_id,
+                ];
+            }
+
             // Limit active tokens per user (max 5 devices)
             $maxActiveTokens = 5;
             $activeTokens = RefreshToken::where('user_id', $user->id)
