@@ -117,9 +117,22 @@ class EventViewController extends Controller implements HasMiddleware
     private function getRelatedData($eventView)
     {
         if ($eventView->type === 'event' && $eventView->event) {
+            $imageUrl = null;
+            if ($eventView->event->image) {
+                // Cek apakah image sudah full URL atau hanya filename
+                if (filter_var($eventView->event->image, FILTER_VALIDATE_URL)) {
+                    // Sudah full URL, gunakan langsung
+                    $imageUrl = $eventView->event->image;
+                } else {
+                    // Hanya filename, generate full URL
+                    $imageUrl = asset('storage/photos/' . $eventView->event->image);
+                }
+            }
+
             return [
                 'category' => $eventView->event->category->nama ?? null,
-                'image' => $eventView->event->image ?? null,
+                'image' => $imageUrl,
+                'location' => $eventView->event->tempat_event ?? null,
             ];
         }
 
