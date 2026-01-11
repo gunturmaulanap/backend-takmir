@@ -152,6 +152,10 @@ class TransaksiKeuanganController extends Controller implements HasMiddleware
             $request->file('bukti_transaksi')->storeAs('bukti-transaksi', $buktiTransaksi, 'public');
         }
 
+        if (array_key_exists('bukti_transaksi', $validated)) {
+            unset($validated['bukti_transaksi']);
+        }
+
         $transaksi = TransaksiKeuangan::create([
             'profile_masjid_id' => $profileMasjidId,
             'bukti_transaksi' => $buktiTransaksi,
@@ -187,6 +191,10 @@ class TransaksiKeuanganController extends Controller implements HasMiddleware
 
             $buktiTransaksi = time() . '.' . $request->file('bukti_transaksi')->getClientOriginalExtension();
             $request->file('bukti_transaksi')->storeAs('bukti-transaksi', $buktiTransaksi, 'public');
+        }
+
+        if (array_key_exists('bukti_transaksi', $validated)) {
+            unset($validated['bukti_transaksi']);
         }
 
         $transaction->update([
